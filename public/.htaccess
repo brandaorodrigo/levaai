@@ -1,0 +1,28 @@
+RewriteEngine On
+
+# redirect trailing slash
+
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^(.+)/$ $1 [L,R=301]
+
+# rewrite to index.html
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.html [L]
+
+# authorization
+
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+
+# headers
+<IfModule mod_headers.c>
+    Header set X-Robots-Tag "noindex, nofollow"
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Headers "*"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+</IfModule>
+
+Options -Indexes
+AddType image/webp .webp
