@@ -1,12 +1,12 @@
 import {
   ArrowRightOutlined,
-  RightOutlined,
   ShoppingOutlined,
   StarFilled,
 } from "@ant-design/icons";
-import { Avatar, Button, Card, Col, Divider, Row, Switch } from "antd";
+import { Button, Card, Col, Divider, Row, Switch } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import HomeHeader from "../../components/Common/HomeHeader";
 import { useAuth } from "../../context/AuthContext";
 import { colors } from "../../theme/theme";
 
@@ -14,13 +14,6 @@ export default function DriverHome() {
   const [online, setOnline] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  const initials =
-    user?.name
-      .split(" ")
-      .map((p: any) => p[0])
-      .slice(0, 2)
-      .join("") || "MR";
 
   const mockRides = [
     {
@@ -57,86 +50,13 @@ export default function DriverHome() {
     },
   ];
 
-  const greeting = (() => {
-    const h = new Date().getHours();
-    if (h < 12) {
-      return "Bom dia";
-    }
-    if (h < 18) {
-      return "Boa tarde";
-    }
-    return "Boa noite";
-  })();
-
   return (
     <div className="page-container">
-      <Row
-        align="middle"
-        justify="space-between"
-        style={{ background: "#000", padding: "20px 20px" }}
-      >
-        <Col
-          onClick={() => navigate("/driver/profile")}
-          style={{ cursor: "pointer" }}
-        >
-          <Row align="middle" style={{ gap: 14 }}>
-            <Col style={{ position: "relative" }}>
-              <Avatar
-                size={52}
-                style={{
-                  background: colors.orangeBg,
-                  border: `2px solid ${colors.orange}`,
-                  color: colors.orange,
-                  fontWeight: 800,
-                  fontSize: 17,
-                }}
-              >
-                {initials}
-              </Avatar>
-              {online && (
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: 1,
-                    right: 1,
-                    width: 12,
-                    height: 12,
-                    background: colors.green,
-                    borderRadius: "50%",
-                    border: "2px solid #000",
-                  }}
-                />
-              )}
-            </Col>
-            <Col>
-              <div
-                style={{ fontSize: 12, color: colors.gray3, fontWeight: 500 }}
-              >
-                {greeting},
-              </div>
-              <Row align="middle" style={{ gap: 5 }}>
-                <Col>
-                  <div
-                    style={{
-                      fontSize: 18,
-                      fontWeight: 700,
-                      color: colors.white,
-                    }}
-                  >
-                    {user?.name.split(" ")[0]}
-                  </div>
-                </Col>
-                <Col>
-                  <RightOutlined
-                    style={{ fontSize: 11, color: colors.gray3 }}
-                  />
-                </Col>
-              </Row>
-            </Col>
-          </Row>
-        </Col>
-
-        <Col>
+      <HomeHeader
+        name={user?.name || "Motorista"}
+        online={online}
+        profilePath="/driver/profile"
+        rightContent={
           <Row align="middle" style={{ gap: 10 }}>
             <Col>
               <span
@@ -149,8 +69,8 @@ export default function DriverHome() {
               <Switch checked={online} onChange={setOnline} />
             </Col>
           </Row>
-        </Col>
-      </Row>
+        }
+      />
 
       <div
         style={{

@@ -1,132 +1,179 @@
-import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
-import {
-  App,
-  Button,
-  Card,
-  Col,
-  Divider,
-  Flex,
-  Form,
-  Grid,
-  Input,
-  Row,
-} from "antd";
-//import axios from "axios";
+import { App as AntApp, Button, Col, Form, Input, Row } from "antd";
 import { useState } from "react";
-import { FaLock, FaUser } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/theme";
+import type { UserRole } from "../types";
 
-type LoginValues = {
-  username: string;
-  password: string;
-};
-
-const Signin: React.FC = () => {
-  const screen = Grid.useBreakpoint();
+export default function Signin() {
+  const [role, setRole] = useState<UserRole>("passenger");
   const [loading, setLoading] = useState(false);
-  const { message } = App.useApp();
-  const [form] = Form.useForm();
+  const { login } = useAuth();
+  const { message } = AntApp.useApp();
+  const navigate = useNavigate();
 
-  const onFinish = async (input: LoginValues) => {
+  const handleLogin = async (values: { phone: string; password: string }) => {
     setLoading(true);
     try {
-      // const { data } = await axios.post('/api/entrar', input);
-      window.localStorage.setItem("user", JSON.stringify(input));
-      window.location.href = import.meta.env.BASE_URL;
+      const user = await login(values.phone, values.password, role);
+      navigate(user.role === "driver" ? "/driver" : "/passenger");
     } catch {
-      message.error("USUÁRIO OU SENHA INVÁLIDOS");
+      message.error("Telefone ou senha inválidos");
     } finally {
       setLoading(false);
     }
   };
 
-  const onGoogle = async (credentialResponse: any) => {
-    const credential = credentialResponse.credential;
-    const payload = JSON.parse(atob(credential.split(".")[1]));
-    const email = payload.email;
-    onFinish({ username: email, password: `google::${credential}` });
-  };
-
   return (
-    <Flex align="center" justify="center">
-      <Row align="middle" justify="center">
-        <Col span={24} style={{ maxWidth: "360px" }}>
-          <Form<LoginValues>
-            form={form}
-            layout="vertical"
-            onFinish={onFinish}
-            requiredMark={false}
-          >
-            <Card
-              style={{ minWidth: screen.xl ? "250px" : "auto", width: "100%" }}
-            >
-              <Row gutter={[20, 20]}>
-                <Col span={24}>
-                  <Form.Item
-                    className="nolabel"
-                    label="USUÁRIO"
-                    name="username"
-                    rules={[{ required: true }]}
-                  >
-                    <Input
-                      autoComplete="username"
-                      autoFocus
-                      placeholder="USUÁRIO"
-                      prefix={<FaUser style={{ marginRight: 5 }} />}
-                      style={{ textTransform: "lowercase" }}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={24}>
-                  <Form.Item
-                    className="nolabel"
-                    label="SENHA"
-                    name="password"
-                    rules={[{ required: true }]}
-                  >
-                    <Input.Password
-                      autoComplete="current-password"
-                      placeholder="SENHA"
-                      prefix={<FaLock style={{ marginRight: 5 }} />}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={24}>
-                  <Form.Item>
-                    <Button
-                      block
-                      htmlType="submit"
-                      loading={loading}
-                      type="primary"
-                    >
-                      ENTRAR
-                    </Button>
-                  </Form.Item>
-                </Col>
-                <Col span={24}>
-                  <Divider style={{ margin: 0 }}>OU</Divider>
-                </Col>
-                <Col span={24}>
-                  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE}>
-                    <GoogleLogin
-                      auto_select
-                      onError={() =>
-                        message.error("ERRO AO FAZER LOGIN COM GOOGLE")
-                      }
-                      onSuccess={onGoogle}
-                      shape="rectangular"
-                      size="large"
-                      text="signin_with"
-                      width="295px"
-                    />
-                  </GoogleOAuthProvider>
-                </Col>
-              </Row>
-            </Card>
-          </Form>
+    <div
+      className="page-container"
+      style={{
+        background: "#000",
+        justifyContent: "center",
+        padding: "48px 28px 40px",
+      }}
+    >
+      <Row style={{ marginBottom: 20 }}>
+        <Col>
+          <img
+            alt="Logo"
+            src="../assets/iconLevaAi.png"
+            style={{ width: 100, height: 100 }}
+          />
         </Col>
       </Row>
-    </Flex>
-  );
-};
 
-export default Signin;
+      <Row style={{ marginBottom: 6 }}>
+        <Col>
+          <img
+            alt="Text"
+            src="../assets/logoLevaAi.png"
+            style={{ width: 250, height: 60 }}
+          />
+        </Col>
+      </Row>
+
+      <Row style={{ marginBottom: 32 }}>
+        <Col>
+          <span style={{ fontSize: 13, color: colors.gray3 }}>
+            Você e suas compras em casa!
+          </span>
+        </Col>
+      </Row>
+
+      {/* Toggle de perfil */}
+      <Row style={{ gap: 8, marginBottom: 16 }}>
+        <Col flex="1">
+          <button
+            onClick={() => setRole("passenger")}
+            style={{
+              width: "100%",
+              padding: "10px",
+              borderRadius: 8,
+              background: role === "passenger" ? colors.orange : colors.bg3,
+              border: `1px solid ${role === "passenger" ? colors.orange : colors.border}`,
+              color: role === "passenger" ? colors.white : colors.gray2,
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+            type="button"
+          >
+            Passageiro
+          </button>
+        </Col>
+        <Col flex="1">
+          <button
+            onClick={() => setRole("driver")}
+            style={{
+              width: "100%",
+              padding: "10px",
+              borderRadius: 8,
+              background: role === "driver" ? colors.orange : colors.bg3,
+              border: `1px solid ${role === "driver" ? colors.orange : colors.border}`,
+              color: role === "driver" ? colors.white : colors.gray2,
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+            type="button"
+          >
+            Motorista
+          </button>
+        </Col>
+      </Row>
+
+      {/* Formulário */}
+      <Form layout="vertical" onFinish={handleLogin} requiredMark={false}>
+        <Form.Item name="phone" style={{ marginBottom: 10 }}>
+          <Input
+            placeholder="(24) 9999-99999"
+            size="large"
+            style={{ borderRadius: 10, fontSize: 14, height: 52 }}
+          />
+        </Form.Item>
+
+        <Form.Item name="password" style={{ marginBottom: 8 }}>
+          <Input.Password
+            placeholder="Senha"
+            size="large"
+            style={{ borderRadius: 10, height: 52 }}
+            styles={{ input: { fontSize: 14, height: "100%" } }}
+          />
+        </Form.Item>
+
+        <Row justify="end" style={{ marginBottom: 24 }}>
+          <Col>
+            <span
+              onClick={() => message.info("Funcionalidade em breve")}
+              style={{
+                fontSize: 12,
+                color: colors.orange,
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Esqueci minha senha
+            </span>
+          </Col>
+        </Row>
+
+        <Form.Item style={{ marginBottom: 16 }}>
+          <Button
+            block
+            htmlType="submit"
+            loading={loading}
+            size="large"
+            style={{
+              height: 52,
+              fontSize: 16,
+              fontWeight: 700,
+              borderRadius: 10,
+            }}
+            type="primary"
+          >
+            Entrar
+          </Button>
+        </Form.Item>
+      </Form>
+
+      <Row justify="center">
+        <Col>
+          <span style={{ fontSize: 13, color: colors.gray3 }}>
+            Não tenho conta —{" "}
+            <span
+              onClick={() => message.info("Funcionalidade em breve")}
+              style={{
+                color: colors.orange,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Cadastrar agora
+            </span>
+          </span>
+        </Col>
+      </Row>
+    </div>
+  );
+}

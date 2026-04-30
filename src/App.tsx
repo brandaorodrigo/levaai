@@ -63,7 +63,7 @@ const App: React.FC = () => {
       <AppOriginal>
         <AuthProvider>
           <RouterProvider
-            router={createBrowserRouter([routes.private], {
+            router={createBrowserRouter([routes.login, routes.private], {
               basename: import.meta.env.BASE_URL,
             })}
           />
