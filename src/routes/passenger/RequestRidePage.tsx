@@ -1,68 +1,169 @@
 import {
-  CheckOutlined,
   EnvironmentOutlined,
+  LoadingOutlined,
   ShoppingOutlined,
 } from "@ant-design/icons";
-import { App as AntApp, Button, Card, Col, Divider, Input, Row } from "antd";
-import { useState } from "react";
+import {
+  App as AntApp,
+  Button,
+  Card,
+  Col,
+  Divider,
+  Input,
+  Row,
+  Spin,
+} from "antd";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { user } from "@/App";
 import PageHeader from "../../components/Common/PageHeader";
+import { useAuth } from "../../context/AuthContext";
+import { customerApi, locationApi, ridesApi } from "../../services/api";
 import { colors } from "../../theme/theme";
 
-interface Suggestion {
+const MARKET = {
+  name: "Bahamas Mix JK",
+  address: "Av. JK, 879 — Francisco Bernardino",
+};
+
+interface Destination {
   id: string;
   name: string;
   address: string;
+  lat?: number;
+  lng?: number;
+  neighborhood?: string;
 }
 
 const BAG_OPTIONS = [
-  { value: "small", label: "Pequena", sub: "Até 3 sacolas" },
-  { value: "medium", label: "Média", sub: "Até 6 sacolas" },
-  { value: "large", label: "Grande", sub: "6+ sacolas" },
+  { value: "pequena", label: "Pequena", sub: "Até 3 sacolas", kg: 5 },
+  { value: "media", label: "Média", sub: "Até 6 sacolas", kg: 15 },
+  { value: "grande", label: "Grande", sub: "6+ sacolas", kg: 30 },
 ] as const;
 
 type BagSize = (typeof BAG_OPTIONS)[number]["value"];
 
-const MOCK_SUGGESTIONS: Suggestion[] = [
-  {
-    id: "1",
-    name: "Rua das Flores, 42",
-    address: "Bairro Santa Cruz — Contagem, MG",
-  },
-  { id: "2", name: "Rua das Flores, 180", address: "Centro — Contagem, MG" },
-  {
-    id: "3",
-    name: "Rua das Flores, 310",
-    address: "Bairro Industrial — Betim, MG",
-  },
-];
-
 export default function RequestRidePage() {
-  const [origin] = useState<Suggestion | null>({
-    id: "0",
-    name: "Extra Supermercado",
-    address: "Av. Brasil, 1200 — Contagem",
-  });
-  const [destination, setDestination] = useState<Suggestion | null>(null);
+  const { user } = useAuth();
+  const [originId, setOriginId] = useState<string>("");
+  const [destination, setDestination] = useState<Destination | null>(null);
   const [query, setQuery] = useState("");
-  const [bagSize, setBagSize] = useState<BagSize>("medium");
+  const [bagSize, setBagSize] = useState<BagSize>("media");
   const [loading, setLoading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const navigate = useNavigate();
   const { message } = AntApp.useApp();
 
-  const suggestions = query.length >= 2 ? MOCK_SUGGESTIONS : [];
+  useEffect(() => {
+    locationApi
+      .getPickupLocations()
+      .then((locs: any) => {
+        const list: any[] = Array.isArray(locs)
+          ? locs
+          : (locs?.items ?? locs?.data ?? []);
+        const market =
+          list.find((l) => l.name?.toLowerCase().includes("bahamas")) ??
+          list[0];
+        if (market) setOriginId(market.id);
+        else console.warn("[PICKUP] nenhum local encontrado");
+      })
+      .catch((e: any) => console.error("[PICKUP ERROR]", e));
+
+    customerApi
+      .me()
+      .then((profile: any) => {
+        const parts = [
+          profile.address,
+          profile.number,
+          profile.complement,
+        ].filter(Boolean);
+        const fullAddress = parts.join(", ");
+        const neighborhood = profile.neighborhood ?? "";
+        if (!fullAddress) return;
+
+        setGeocoding(true);
+        locationApi
+          .geocodeAddress(`${fullAddress}, ${neighborhood}, Petrópolis`)
+          .then((geo) => {
+            setDestination({
+              id: crypto.randomUUID(),
+              name: "Minha residência",
+              address: `${fullAddress}${neighborhood ? ` — ${neighborhood}` : ""}`,
+              lat: geo.latitude,
+              lng: geo.longitude,
+              neighborhood,
+            });
+          })
+          .catch(() => {
+            setDestination({
+              id: crypto.randomUUID(),
+              name: "Minha residência",
+              address: `${fullAddress}${neighborhood ? ` — ${neighborhood}` : ""}`,
+              lat: 0,
+              lng: 0,
+              neighborhood,
+            });
+          })
+          .finally(() => setGeocoding(false));
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSelectDestination = async (name: string, address: string) => {
+    setGeocoding(true);
+    setQuery("");
+    try {
+      const geo = await locationApi.geocodeAddress(`${name}, ${address}`);
+      setDestination({
+        id: crypto.randomUUID(),
+        name,
+        address,
+        lat: geo.latitude,
+        lng: geo.longitude,
+        neighborhood: address.split("—")[0]?.trim() ?? address,
+      });
+    } catch {
+      setDestination({
+        id: crypto.randomUUID(),
+        name,
+        address,
+        lat: 0,
+        lng: 0,
+      });
+    } finally {
+      setGeocoding(false);
+    }
+  };
 
   const handleRequest = async () => {
-    if (!origin || !destination) {
-      message.warning("Informe os endereços de saída e destino");
+    if (!destination) {
+      message.warning("Informe o endereço de destino");
       return;
     }
+    if (!originId) {
+      message.error("Local de saída não carregado. Recarregue a página.");
+      return;
+    }
+
+    const bagOpt = BAG_OPTIONS.find((b) => b.value === bagSize)!;
+
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 800));
+      const ride = await ridesApi.create({
+        origin_id: originId,
+        destination_full_address: `${destination.name}, ${destination.address}`,
+        destination_postal_code: "00000-000",
+        destination_neighborhood: destination.neighborhood ?? "Centro",
+        destination_lat: destination.lat ?? 0,
+        destination_lng: destination.lng ?? 0,
+        purchase_size: bagSize,
+        estimated_weight_kg: bagOpt.kg,
+        payment_method: "pix",
+        needs_loading_help: bagOpt.value === "grande",
+      });
       message.success("Buscando motorista...");
-      navigate("/passenger/track/ride_123");
+      navigate(`/passenger/track/${ride.id}`);
+    } catch {
+      message.error("Erro ao solicitar corrida. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -70,7 +171,9 @@ export default function RequestRidePage() {
 
   return (
     <div className="page-container">
-      <PageHeader title={`Para onde, ${user?.name || "passageiro"}?`} />
+      <PageHeader
+        title={`Para onde, ${user?.name?.split(" ")[0] ?? "passageiro"}?`}
+      />
 
       <div
         style={{
@@ -82,6 +185,7 @@ export default function RequestRidePage() {
           overflowY: "auto",
         }}
       >
+        {/* Origin selector */}
         <Card style={{ overflow: "hidden" }} styles={{ body: { padding: 0 } }}>
           <Row
             align="middle"
@@ -117,22 +221,25 @@ export default function RequestRidePage() {
               <div
                 style={{ fontSize: 9, color: colors.gray3, fontWeight: 600 }}
               >
-                Saída
+                Saída — onde você está
               </div>
               <div
-                style={{ fontSize: 11, fontWeight: 700, color: colors.white }}
+                style={{
+                  fontSize: 13,
+                  color: colors.white,
+                  fontWeight: 600,
+                  marginTop: 2,
+                }}
               >
-                {origin?.name}
+                {MARKET.name}
               </div>
-              <div style={{ fontSize: 9, color: colors.gray3 }}>
-                {origin?.address}
+              <div style={{ fontSize: 10, color: colors.gray3 }}>
+                {MARKET.address}
               </div>
-            </Col>
-            <Col>
-              <CheckOutlined style={{ color: colors.orange, fontSize: 13 }} />
             </Col>
           </Row>
 
+          {/* Destination input */}
           <Row align="top" style={{ gap: 10, padding: "10px 12px" }}>
             <Col style={{ paddingTop: 12 }}>
               <div
@@ -155,7 +262,9 @@ export default function RequestRidePage() {
               >
                 Destino
               </div>
-              {destination ? (
+              {geocoding ? (
+                <Spin indicator={<LoadingOutlined />} size="small" />
+              ) : destination ? (
                 <>
                   <div
                     style={{
@@ -189,7 +298,12 @@ export default function RequestRidePage() {
               ) : (
                 <Input
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Digite o endereço"
+                  onPressEnter={() => {
+                    if (query.trim().length >= 2) {
+                      handleSelectDestination(query.trim(), "");
+                    }
+                  }}
+                  placeholder="Digite o endereço de entrega"
                   prefix={
                     <EnvironmentOutlined style={{ color: colors.gray3 }} />
                   }
@@ -201,82 +315,6 @@ export default function RequestRidePage() {
             </Col>
           </Row>
         </Card>
-
-        {!destination && suggestions.length > 0 && (
-          <Card
-            style={{ overflow: "hidden" }}
-            styles={{ body: { padding: 0 } }}
-          >
-            <Row
-              style={{
-                padding: "8px 12px",
-                borderBottom: `1px solid ${colors.bg5}`,
-              }}
-            >
-              <Col>
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: colors.gray3,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                  }}
-                >
-                  Sugestões
-                </span>
-              </Col>
-            </Row>
-
-            {suggestions.map((s, i) => (
-              <button
-                key={s.id}
-                onClick={() => {
-                  setDestination(s);
-                  setQuery("");
-                }}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  cursor: "pointer",
-                  background: i === 0 ? colors.orangeBg : "transparent",
-                  borderBottom:
-                    i < suggestions.length - 1
-                      ? `1px solid ${colors.bg5}`
-                      : "none",
-                  border: "none",
-                  display: "flex",
-                  gap: 10,
-                  alignItems: "center",
-                  textAlign: "left",
-                }}
-                type="button"
-              >
-                <EnvironmentOutlined
-                  style={{
-                    color: i === 0 ? colors.orange : colors.gray3,
-                    fontSize: 14,
-                    flexShrink: 0,
-                  }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: colors.white,
-                    }}
-                  >
-                    {s.name}
-                  </div>
-                  <div style={{ fontSize: 9, color: colors.gray3 }}>
-                    {s.address}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </Card>
-        )}
 
         <div>
           <Row align="middle" style={{ gap: 6, marginBottom: 10 }}>
@@ -380,7 +418,7 @@ export default function RequestRidePage() {
                       fontWeight: 600,
                     }}
                   >
-                    Valor
+                    Pagamento
                   </span>
                 </Col>
                 <Col>
@@ -391,7 +429,7 @@ export default function RequestRidePage() {
                       fontWeight: 600,
                     }}
                   >
-                    R$ 22,50
+                    Pix
                   </span>
                 </Col>
               </Row>

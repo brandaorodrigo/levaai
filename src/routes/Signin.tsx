@@ -12,10 +12,28 @@ export default function Signin() {
   const { message } = AntApp.useApp();
   const navigate = useNavigate();
 
+  const maskPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (!digits.length) {
+      return "";
+    }
+    if (digits.length <= 2) {
+      return `(${digits}`;
+    }
+    if (digits.length <= 7) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    }
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
   const handleLogin = async (values: { phone: string; password: string }) => {
     setLoading(true);
     try {
-      const user = await login(values.phone, values.password, role);
+      const user = await login(
+        values.phone.replace(/\D/g, ""),
+        values.password,
+        role,
+      );
       navigate(user.role === "driver" ? "/driver" : "/passenger");
     } catch {
       message.error("Telefone ou senha inválidos");
@@ -61,7 +79,6 @@ export default function Signin() {
         </Col>
       </Row>
 
-      {/* Toggle de perfil */}
       <Row style={{ gap: 8, marginBottom: 16 }}>
         <Col flex="1">
           <button
@@ -103,11 +120,14 @@ export default function Signin() {
         </Col>
       </Row>
 
-      {/* Formulário */}
       <Form layout="vertical" onFinish={handleLogin} requiredMark={false}>
-        <Form.Item name="phone" style={{ marginBottom: 10 }}>
+        <Form.Item
+          name="phone"
+          normalize={maskPhone}
+          style={{ marginBottom: 10 }}
+        >
           <Input
-            placeholder="(24) 9999-99999"
+            placeholder="(24) 99999-9999"
             size="large"
             style={{ borderRadius: 10, fontSize: 14, height: 52 }}
           />
@@ -162,7 +182,7 @@ export default function Signin() {
           <span style={{ fontSize: 13, color: colors.gray3 }}>
             Não tenho conta —{" "}
             <span
-              onClick={() => message.info("Funcionalidade em breve")}
+              onClick={() => navigate("/register")}
               style={{
                 color: colors.orange,
                 fontWeight: 700,

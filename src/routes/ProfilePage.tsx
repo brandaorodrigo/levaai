@@ -1,4 +1,4 @@
-import { LogoutOutlined } from "@ant-design/icons";
+import { LogoutOutlined, StarFilled } from "@ant-design/icons";
 import {
   App as AntApp,
   Avatar,
@@ -12,12 +12,12 @@ import {
 } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import PageHeader from "../../components/Common/PageHeader";
-import { useAuth } from "../../context/AuthContext";
-import { customerApi, locationApi } from "../../services/api";
-import { colors } from "../../theme/theme";
+import PageHeader from "../components/Common/PageHeader";
+import { useAuth } from "../context/AuthContext";
+import { customerApi, driverApi, locationApi } from "../services/api";
+import { colors } from "../theme/theme";
 
-export default function PassengerProfile() {
+export default function ProfilePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { message, modal } = AntApp.useApp();
@@ -26,18 +26,21 @@ export default function PassengerProfile() {
   const [saving, setSaving] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [memberSince, setMemberSince] = useState("");
+  const [rating, setRating] = useState<string | undefined>();
+
+  const isDriver = user?.role === "driver";
 
   const initials =
     user?.name
       .split(" ")
       .map((p) => p[0])
       .slice(0, 2)
-      .join("") || "JC";
+      .join("") || "??";
 
   useEffect(() => {
-    customerApi
-      .me()
-      .then((data) => {
+    const request = isDriver ? driverApi.me() : customerApi.me();
+    request
+      .then((data: any) => {
         form.setFieldsValue({
           name: data.fullName,
           phone: data.phone,
@@ -51,22 +54,22 @@ export default function PassengerProfile() {
         if (data.createdAt) {
           const d = new Date(data.createdAt);
           setMemberSince(
-            `Cliente desde ${d.toLocaleDateString("pt-BR", {
-              month: "long",
-              year: "numeric",
-            })}`,
+            `${isDriver ? "Motorista" : "Cliente"} desde ${d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`,
           );
+        }
+        if (data.averageRating) {
+          setRating(Number(data.averageRating).toFixed(1));
         }
       })
       .catch(() => message.error("Erro ao carregar perfil"))
       .finally(() => setLoading(false));
-  }, [form, message]);
+  }, [form, message, isDriver]);
 
   const handleSave = async () => {
     const values = form.getFieldsValue();
     setSaving(true);
     try {
-      await customerApi.update({
+      const payload = {
         fullName: values.name,
         email: values.email,
         postalCode: values.cep?.replace(/\D/g, ""),
@@ -74,7 +77,12 @@ export default function PassengerProfile() {
         neighborhood: values.neighborhood,
         number: values.number,
         complement: values.complement,
-      });
+      };
+      if (isDriver) {
+        await driverApi.update(payload);
+      } else {
+        await customerApi.update(payload);
+      }
       message.success("Perfil salvo!");
     } catch {
       message.error("Erro ao salvar perfil");
@@ -85,9 +93,7 @@ export default function PassengerProfile() {
 
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "");
-    if (raw.length !== 8) {
-      return;
-    }
+    if (raw.length !== 8) return;
     setCepLoading(true);
     try {
       const cep = `${raw.slice(0, 5)}-${raw.slice(5)}`;
@@ -119,14 +125,7 @@ export default function PassengerProfile() {
     return (
       <div className="page-container">
         <PageHeader title="Meu perfil" />
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Spin />
         </div>
       </div>
@@ -182,15 +181,16 @@ export default function PassengerProfile() {
             </Row>
             <Row justify="center">
               <Col style={{ textAlign: "center" }}>
-                <div
-                  style={{ fontSize: 14, fontWeight: 700, color: colors.white }}
-                >
+                <div style={{ fontSize: 14, fontWeight: 700, color: colors.white }}>
                   {user?.name}
                 </div>
+                {rating && (
+                  <div style={{ fontSize: 11, color: colors.amber, marginTop: 4 }}>
+                    <StarFilled /> {rating}
+                  </div>
+                )}
                 {memberSince && (
-                  <div
-                    style={{ fontSize: 10, color: colors.gray3, marginTop: 2 }}
-                  >
+                  <div style={{ fontSize: 10, color: colors.gray3, marginTop: 2 }}>
                     {memberSince}
                   </div>
                 )}
@@ -198,98 +198,54 @@ export default function PassengerProfile() {
             </Row>
           </Card>
 
-          <Card
-            title={
-              <span
-                style={{
-                  fontSize: 11,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                  color: colors.gray2,
-                }}
-              >
-                Dados pessoais
-              </span>
-            }
-          >
+          <Card title={<SectionTitle>Dados pessoais</SectionTitle>}>
             <Form.Item label="Nome" name="name" style={{ marginBottom: 10 }}>
               <Input />
             </Form.Item>
             <Row gutter={10}>
               <Col span={12}>
-                <Form.Item
-                  label="Celular"
-                  name="phone"
-                  style={{ marginBottom: 10 }}
-                >
+                <Form.Item label="Celular" name="phone" style={{ marginBottom: 10 }}>
                   <Input disabled />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item
-                  label="E-mail"
-                  name="email"
-                  style={{ marginBottom: 0 }}
-                >
+                <Form.Item label="E-mail" name="email" style={{ marginBottom: 0 }}>
                   <Input placeholder="seu@email.com" />
                 </Form.Item>
               </Col>
             </Row>
           </Card>
 
-          <Card
-            title={
-              <span
-                style={{
-                  fontSize: 11,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                  color: colors.gray2,
-                }}
-              >
-                Endereço
-              </span>
-            }
-          >
-            <Form.Item label="CEP" name="cep" style={{ marginBottom: 10 }}>
-              <Input
-                disabled={cepLoading}
-                maxLength={9}
-                onBlur={handleCepBlur}
-                placeholder="00000-000"
-              />
-            </Form.Item>
-            <Form.Item label="Rua" name="street" style={{ marginBottom: 10 }}>
-              <Input placeholder="Ex: Rua das Flores" />
-            </Form.Item>
-            <Row gutter={10}>
-              <Col span={8}>
-                <Form.Item
-                  label="Número"
-                  name="number"
-                  style={{ marginBottom: 10 }}
-                >
-                  <Input placeholder="42" />
-                </Form.Item>
-              </Col>
-              <Col span={16}>
-                <Form.Item
-                  label="Complemento"
-                  name="complement"
-                  style={{ marginBottom: 10 }}
-                >
-                  <Input placeholder="Apto, bloco..." />
-                </Form.Item>
-              </Col>
-            </Row>
-            <Form.Item
-              label="Bairro"
-              name="neighborhood"
-              style={{ marginBottom: 0 }}
-            >
-              <Input placeholder="Ex: Santa Cruz" />
-            </Form.Item>
-          </Card>
+          {!isDriver && (
+            <Card title={<SectionTitle>Endereço</SectionTitle>}>
+              <Form.Item label="CEP" name="cep" style={{ marginBottom: 10 }}>
+                <Input
+                  disabled={cepLoading}
+                  maxLength={9}
+                  onBlur={handleCepBlur}
+                  placeholder="00000-000"
+                />
+              </Form.Item>
+              <Form.Item label="Rua" name="street" style={{ marginBottom: 10 }}>
+                <Input placeholder="Ex: Rua das Flores" />
+              </Form.Item>
+              <Row gutter={10}>
+                <Col span={8}>
+                  <Form.Item label="Número" name="number" style={{ marginBottom: 10 }}>
+                    <Input placeholder="42" />
+                  </Form.Item>
+                </Col>
+                <Col span={16}>
+                  <Form.Item label="Complemento" name="complement" style={{ marginBottom: 10 }}>
+                    <Input placeholder="Apto, bloco..." />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Form.Item label="Bairro" name="neighborhood" style={{ marginBottom: 0 }}>
+                <Input placeholder="Ex: Santa Cruz" />
+              </Form.Item>
+            </Card>
+          )}
 
           <Button
             block
@@ -308,5 +264,20 @@ export default function PassengerProfile() {
         </div>
       </Form>
     </div>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      style={{
+        fontSize: 11,
+        textTransform: "uppercase",
+        letterSpacing: "0.06em",
+        color: colors.gray2,
+      }}
+    >
+      {children}
+    </span>
   );
 }

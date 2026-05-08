@@ -1,90 +1,125 @@
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import type { User, UserRole } from '../types';
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { authApi, type RemoteUser } from "../services/api";
+import type { User, UserRole } from "../types";
+
+interface RegisterData {
+  name: string;
+  phone: string;
+  password: string;
+  postalCode: string;
+  address: string;
+  neighborhood: string;
+  number: string;
+  complement?: string;
+  email?: string;
+}
 
 interface AuthContextType {
-    user: User | null;
-    isLoading: boolean;
-    login: (phone: string, password: string, role: UserRole) => Promise<User>;
-    logout: () => void;
-    register: (data: Partial<User> & { password: string }) => Promise<User>;
+  user: User | null;
+  isLoading: boolean;
+  login: (phone: string, password: string, role: UserRole) => Promise<User>;
+  logout: () => void;
+  register: (data: RegisterData) => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'leva_so_user';
+const STORAGE_KEY = "user";
+
+function toUser(remote: RemoteUser, token: string): User & { token: string } {
+  return {
+    id: remote.id,
+    name: remote.fullName,
+    phone: remote.phone,
+    email: remote.email,
+    role: remote.role === "customer" ? "passenger" : "driver",
+    rating: remote.rating,
+    avatar: remote.profilePhoto,
+    token,
+  };
+}
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            try {
-                setUser(JSON.parse(stored));
-            } catch {
-                localStorage.removeItem(STORAGE_KEY);
-            }
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed?.token) {
+          setUser(parsed);
         }
-        setIsLoading(false);
-    }, []);
-
-    const login = async (phone: string, _password: string, role: UserRole): Promise<User> => {
-        // POC: mock login — integrar com backend real depois
-        await new Promise((r) => setTimeout(r, 600));
-
-        const mockUser: User =
-            role === 'driver'
-                ? {
-                      id: 'driver_1',
-                      name: 'Marcos Ribeiro',
-                      phone,
-                      role: 'driver',
-                      rating: 4.9,
-                  }
-                : {
-                      id: 'passenger_1',
-                      name: 'João Carlos Silva',
-                      phone,
-                      role: 'passenger',
-                      rating: 4.9,
-                  };
-
-        setUser(mockUser);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
-        return mockUser;
-    };
-
-    const register = async (data: Partial<User> & { password: string }): Promise<User> => {
-        await new Promise((r) => setTimeout(r, 600));
-        const newUser: User = {
-            id: `${data.role}_${Date.now()}`,
-            name: data.name || '',
-            phone: data.phone || '',
-            email: data.email,
-            role: data.role || 'passenger',
-        };
-        setUser(newUser);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
-        return newUser;
-    };
-
-    const logout = () => {
-        setUser(null);
+      } catch {
         localStorage.removeItem(STORAGE_KEY);
-    };
+      }
+    }
+    setIsLoading(false);
+  }, []);
 
-    return (
-        <AuthContext.Provider value={{ user, isLoading, login, logout, register }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  const login = async (
+    phone: string,
+    password: string,
+    _role: UserRole,
+  ): Promise<User> => {
+    const response = (await authApi.login(phone, password)) as any;
+    const token: string = response?.accessToken;
+    const refreshToken: string = response?.refreshToken;
+    const remoteUser = response?.user;
+    const mapped = { ...toUser(remoteUser, token), refreshToken };
+    setUser(mapped);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+    return mapped;
+  };
+
+  const register = async (data: RegisterData): Promise<User> => {
+    await authApi.registerCustomer({
+      fullName: data.name,
+      phone: data.phone,
+      password: data.password,
+      postalCode: data.postalCode,
+      address: data.address,
+      neighborhood: data.neighborhood,
+      number: data.number,
+      complement: data.complement,
+      email: data.email,
+    });
+    return login(data.phone, data.password, "passenger");
+  };
+
+  const logout = () => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const { refreshToken } = JSON.parse(stored);
+        if (refreshToken) {
+          authApi.logout(refreshToken).catch(() => {});
+        }
+      } catch {}
+    }
+    setUser(null);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, isLoading, login, logout, register }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-    const ctx = useContext(AuthContext);
-    if (!ctx) {
-        throw new Error('useAuth must be used within AuthProvider');
-    }
-    return ctx;
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return ctx;
 }

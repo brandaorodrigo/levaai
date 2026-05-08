@@ -4,58 +4,35 @@ import {
   ShoppingOutlined,
   StarFilled,
 } from "@ant-design/icons";
-import { Avatar, Button, Card, Col, Divider, Row, Switch } from "antd";
-import { useState } from "react";
+import { Avatar, Card, Col, Divider, Row, Spin, Switch } from "antd";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import {
+  type ApiRide,
+  type DriverDashboard,
+  driverApi,
+  formatRideDate,
+  ridesApi,
+} from "../../services/api";
 import { colors } from "../../theme/theme";
 
 export default function DriverHome() {
-  const [online, setOnline] = useState(true);
+  const [online, setOnline] = useState(false);
+  const [dashboard, setDashboard] = useState<DriverDashboard | null>(null);
+  const [recentRides, setRecentRides] = useState<ApiRide[]>([]);
+  const [statusLoading, setStatusLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const shownRideRef = useRef<string | null>(null);
 
   const initials =
     user?.name
       .split(" ")
-      .map((p: any) => p[0])
+      .map((p: string) => p[0])
       .slice(0, 2)
       .join("") || "MR";
-
-  const mockRides = [
-    {
-      id: 1,
-      from: "Extra Supermercado",
-      to: "Rua das Flores",
-      value: "R$22,50",
-      date: "Hoje",
-      time: "13:45",
-    },
-    {
-      id: 2,
-      from: "Pão de Açúcar",
-      to: "Av. Central",
-      value: "R$19,00",
-      date: "Hoje",
-      time: "11:20",
-    },
-    {
-      id: 3,
-      from: "Carrefour",
-      to: "R. XV de Novembro",
-      value: "R$31,00",
-      date: "Ontem",
-      time: "17:08",
-    },
-    {
-      id: 4,
-      from: "Atacadão",
-      to: "Rua Ipiranga, 90",
-      value: "R$27,80",
-      date: "Ontem",
-      time: "09:33",
-    },
-  ];
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -67,6 +44,69 @@ export default function DriverHome() {
     }
     return "Boa noite";
   })();
+
+  useEffect(() => {
+    driverApi
+      .dashboard()
+      .then((data) => {
+        setDashboard(data);
+        if (data.active_ride) {
+          setOnline(true);
+        }
+      })
+      .catch(() => {});
+
+    ridesApi
+      .myRides({ limit: 5 })
+      .then((data) => {
+        const list = Array.isArray(data) ? data : ((data as any).data ?? []);
+        setRecentRides(list.filter((r: ApiRide) => r.status === "finalizada"));
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!online) {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+      return;
+    }
+
+    const checkRides = async () => {
+      try {
+        const rides = await ridesApi.available();
+        if (rides.length > 0 && rides[0].id !== shownRideRef.current) {
+          shownRideRef.current = rides[0].id;
+          navigate("/driver/new-ride", { state: { ride: rides[0] } });
+        }
+      } catch {}
+    };
+
+    checkRides();
+    pollRef.current = setInterval(checkRides, 10000);
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+    };
+  }, [online, navigate]);
+
+  const handleToggleStatus = async (checked: boolean) => {
+    setStatusLoading(true);
+    try {
+      await driverApi.setStatus(checked ? "ativo" : "inativo");
+      setOnline(checked);
+    } catch {
+      // revert if API fails
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  const today = dashboard?.today_stats;
+  const week = dashboard?.week_stats;
+  const rating = dashboard?.general_stats?.averageRating;
 
   return (
     <div className="page-container">
@@ -146,7 +186,11 @@ export default function DriverHome() {
               </span>
             </Col>
             <Col>
-              <Switch checked={online} onChange={setOnline} />
+              <Switch
+                checked={online}
+                loading={statusLoading}
+                onChange={handleToggleStatus}
+              />
             </Col>
           </Row>
         </Col>
@@ -188,19 +232,34 @@ export default function DriverHome() {
 
         <Row gutter={[8, 8]}>
           <Col span={12}>
-            <StatCard color={colors.orange} label="Ganhos hoje" value="R$ 87" />
+            <StatCard
+              color={colors.orange}
+              label="Ganhos hoje"
+              value={
+                dashboard
+                  ? `R$ ${(today?.earnings ?? 0).toFixed(2).replace(".", ",")}`
+                  : "—"
+              }
+            />
           </Col>
           <Col span={12}>
-            <StatCard label="Corridas hoje" value="4" />
+            <StatCard
+              label="Corridas hoje"
+              value={dashboard ? String(today?.rides ?? 0) : "—"}
+            />
           </Col>
           <Col span={12}>
             <StatCard
               color={colors.amber}
               label="Avaliação"
               value={
-                <>
-                  <StarFilled /> 4.9
-                </>
+                rating != null ? (
+                  <>
+                    <StarFilled /> {rating.toFixed(1)}
+                  </>
+                ) : (
+                  "—"
+                )
               }
             />
           </Col>
@@ -208,7 +267,11 @@ export default function DriverHome() {
             <StatCard
               color={colors.orange}
               label="Esta semana"
-              value="R$ 412"
+              value={
+                dashboard
+                  ? `R$ ${(week?.earnings ?? 0).toFixed(2).replace(".", ",")}`
+                  : "—"
+              }
             />
           </Col>
         </Row>
@@ -247,7 +310,21 @@ export default function DriverHome() {
           >
             ÚLTIMAS CORRIDAS
           </div>
-          {mockRides.map((ride, i) => (
+          {!dashboard && (
+            <div
+              style={{ display: "flex", justifyContent: "center", padding: 16 }}
+            >
+              <Spin size="small" />
+            </div>
+          )}
+          {dashboard && recentRides.length === 0 && (
+            <div
+              style={{ fontSize: 11, color: colors.gray3, padding: "8px 0" }}
+            >
+              Nenhuma corrida ainda
+            </div>
+          )}
+          {recentRides.map((ride, i) => (
             <div key={ride.id}>
               <Row
                 align="middle"
@@ -258,7 +335,7 @@ export default function DriverHome() {
                   <div
                     style={{ fontSize: 10, color: colors.gray4, marginTop: 3 }}
                   >
-                    {ride.date} • {ride.time}
+                    {formatRideDate(ride.created_at)}
                   </div>
                   <Row align="middle" style={{ gap: 4, flexWrap: "nowrap" }}>
                     <Col
@@ -271,7 +348,7 @@ export default function DriverHome() {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {ride.from}
+                      {ride.origin.name}
                     </Col>
                     <Col style={{ flexShrink: 0 }}>
                       <ArrowRightOutlined
@@ -287,37 +364,30 @@ export default function DriverHome() {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {ride.to}
+                      {ride.destination_neighborhood}
                     </Col>
                   </Row>
                 </Col>
-                <Col
-                  style={{
-                    color: colors.orange,
-                    fontWeight: 700,
-                    fontSize: 13,
-                    flexShrink: 0,
-                    paddingLeft: 12,
-                  }}
-                >
-                  +{ride.value}
-                </Col>
+                {ride.estimated_value != null && (
+                  <Col
+                    style={{
+                      color: colors.orange,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      flexShrink: 0,
+                      paddingLeft: 12,
+                    }}
+                  >
+                    +R$ {ride.estimated_value.toFixed(2).replace(".", ",")}
+                  </Col>
+                )}
               </Row>
-              {i < mockRides.length - 1 && (
+              {i < recentRides.length - 1 && (
                 <Divider style={{ margin: 0, borderColor: colors.border }} />
               )}
             </div>
           ))}
         </Card>
-
-        <Button
-          block
-          onClick={() => navigate("/driver/new-ride")}
-          style={{ marginTop: 8 }}
-          type="dashed"
-        >
-          [POC] Simular nova corrida
-        </Button>
       </div>
     </div>
   );
