@@ -21,7 +21,7 @@ const PassengerProfile = () => {
         const cep = value.replace(/\D/g, '');
         form.setFieldsValue({ street: undefined, neighborhood: undefined });
         axios
-            .get<{ data: CepData }>('locations/cep', { params: { cep } })
+            .get<{ data: CepData }>('/locations/cep', { params: { cep } })
             .then(({ data }) =>
                 form.setFieldsValue({
                     address: data.data.street,
@@ -33,12 +33,12 @@ const PassengerProfile = () => {
 
     useEffect(() => {
         setLoading(true);
-        if (!auth) {
+        if (!auth?.accessToken) {
             setLoading(false);
             return;
         }
         axios
-            .get<{ data: PassengerProfileProps }>('users/customers/me')
+            .get<{ data: PassengerProfileProps }>('/users/customers/me')
             .then(({ data }) => {
                 const me = data.data;
                 if (me?.phone) {
@@ -59,15 +59,16 @@ const PassengerProfile = () => {
         if (values?.postalCode) {
             values.postalCode = values.postalCode.replace(/\D/g, '');
         }
-        if (!auth) {
+        delete values?.confirmPassword;
+        if (!auth?.accessToken) {
             axios
-                .post('auth/register/customer', values)
+                .post('/auth/register/customer', values)
                 .then(() => login(values.phone, values.password))
                 .then(() => (window.location.href = '/'))
                 .catch(() => setSubmitting(false));
         } else {
             axios
-                .patch<{ data: PassengerProfileProps }>('users/customers/me', values)
+                .patch<{ data: PassengerProfileProps }>('/users/customers/me', values)
                 .then(() => message.success('Dados atualizados com sucesso!'))
                 .catch(() => setSubmitting(false));
         }
@@ -75,7 +76,7 @@ const PassengerProfile = () => {
 
     return (
         <>
-            {!auth && (
+            {!auth?.accessToken && (
                 <Typography.Title level={2} style={{ marginBottom: 20 }}>
                     Cadastrar passageiro
                 </Typography.Title>
@@ -99,7 +100,7 @@ const PassengerProfile = () => {
                 >
                     <Input maxLength={15} placeholder='(00) 00000-0000' />
                 </Form.Item>
-                {!auth && (
+                {!auth?.accessToken && (
                     <>
                         <Form.Item label='Senha' name='password' rules={[{ required: true }]}>
                             <Input.Password maxLength={15} placeholder='Senha' showCount />
@@ -153,7 +154,7 @@ const PassengerProfile = () => {
                 </Form.Item>
                 <div style={{ height: '20px' }} />
                 <Button block htmlType='submit' loading={submitting} type='primary'>
-                    {auth ? 'Atualizar' : 'Cadastrar'}
+                    {auth?.accessToken ? 'Atualizar' : 'Cadastrar'}
                 </Button>
             </Form>
         </>

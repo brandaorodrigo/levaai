@@ -31,6 +31,7 @@ type AuthProps = {
 type PassengerProfileProps = {
     address: string;
     complement: string;
+    confirmPassword?: string;
     email: string;
     fullName: string;
     id: string;
@@ -171,7 +172,10 @@ axios.interceptors.response.use(
         return response;
     },
     async (error) => {
-        const text = error?.response?.data?.error?.message?.[0] || 'Ocorreu um erro desconhecido';
+        const found = error?.response?.data?.error?.message;
+        const text = Array.isArray(found)
+            ? found.join('\n')
+            : found || 'Ocorreu um erro desconhecido';
         message.error(String(text));
         throw new Error(text);
     },

@@ -16,7 +16,7 @@ const DriverProfile = () => {
             return;
         }
         axios
-            .get<{ data: DriverProfileProps }>('users/drivers/me')
+            .get<{ data: DriverProfileProps }>('/users/drivers/me')
             .then(({ data }) => {
                 const me = data.data;
                 if (me?.licenseExpiry) {
@@ -49,13 +49,13 @@ const DriverProfile = () => {
         }
         if (!auth?.accessToken) {
             axios
-                .post('auth/register/driver', values)
+                .post('/auth/register/driver', values)
                 .then(() => login(values.phone, values.password))
                 .then(() => (window.location.href = '/'))
                 .catch(() => setSubmitting(false));
         } else {
             axios
-                .patch<{ data: DriverProfileProps }>('users/drivers/me', values)
+                .patch<{ data: DriverProfileProps }>('/users/drivers/me', values)
                 .then(() => message.success('Dados atualizados com sucesso!'))
                 .catch(() => setSubmitting(false));
         }

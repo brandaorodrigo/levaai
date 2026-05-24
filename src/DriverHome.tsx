@@ -5,17 +5,17 @@ import { auth, type PickupData } from './App';
 
 const DriverHome = () => {
     useEffect(() => {
-        axios.get('locations/destinations').then(({ data }) => {
+        axios.get('/locations/destinations').then(({ data }) => {
             console.log('destinations', data);
         });
 
-        axios.get<{ data: PickupData[] }>('locations/pickup').then(({ data }) => {
+        axios.get<{ data: PickupData[] }>('/locations/pickup').then(({ data }) => {
             console.log('passenger pickup', data.data);
         });
-        axios.get('locations/rides/available').then(({ data }) => {
+        axios.get('/api/rides/available').then(({ data }) => {
             console.log('driver available rides', data);
         });
-        axios.get('locations/rides/available-drivers').then(({ data }) => {
+        axios.get('/api/rides/available-drivers').then(({ data }) => {
             console.log('passenger available drivers', data);
         });
     }, []);

@@ -1,16 +1,17 @@
 import { Button, Layout } from 'antd';
 import axios from 'axios';
 import { useEffect, useRef } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { auth, logout } from './App';
 import Header from './Header';
 
 const Template = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const lastLocationRef = useRef<{ latitude: number; longitude: number }>();
 
     useEffect(() => {
-        if (!auth || auth?.user?.role !== 'driver' || !navigator.geolocation) {
+        if (!auth?.accessToken || auth?.user?.role !== 'driver' || !navigator.geolocation) {
             return;
         }
         const sendLocation = () => {
@@ -49,7 +50,7 @@ const Template = () => {
                     <Header />
                     <Outlet />
                 </Layout.Content>
-                {auth && (
+                {auth?.accessToken && (
                     <div style={{ textAlign: 'center', margin: '0 auto 30px auto' }}>
                         <Button onClick={() => navigate('/')} type='link'>
                             Início
@@ -65,7 +66,7 @@ const Template = () => {
                         </Button>
                     </div>
                 )}
-                {!auth && (
+                {!auth?.accessToken && location.pathname !== '/' && (
                     <div style={{ textAlign: 'center', margin: '0 auto 30px auto' }}>
                         <Button onClick={() => navigate(-1)} type='link'>
                             Voltar
