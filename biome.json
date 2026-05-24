@@ -45,9 +45,6 @@
                 "noStaticElementInteractions": "off",
                 "useKeyWithClickEvents": "off"
             },
-            "complexity": {
-                "noImportantStyles": "off"
-            },
             "correctness": {
                 "useExhaustiveDependencies": "off",
                 "noNestedComponentDefinitions": "off"

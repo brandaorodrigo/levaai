@@ -2,6 +2,4 @@
 
 interface ImportMetaEnv {
     readonly VITE_API: string;
-    readonly VITE_API_PHP: string;
-    readonly VITE_GOOGLE: string;
 }

@@ -23,14 +23,6 @@ export default defineConfig({
             },
             typescript: true,
         }),
-        {
-            name: 'html-transform',
-            transformIndexHtml: (html) =>
-                html.replace(
-                    '{build}',
-                    new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
-                ),
-        },
     ],
     resolve: {
         alias: [
