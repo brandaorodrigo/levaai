@@ -1,7 +1,7 @@
 import { Typography } from 'antd';
 import axios from 'axios';
 import { useEffect } from 'react';
-import { auth } from './App';
+import { auth, type PickupData } from './App';
 
 const DriverHome = () => {
     useEffect(() => {
@@ -9,8 +9,8 @@ const DriverHome = () => {
             console.log('destinations', data);
         });
 
-        axios.get('locations/pickups').then(({ data }) => {
-            console.log('passenger pickups', data);
+        axios.get<{ data: PickupData[] }>('locations/pickup').then(({ data }) => {
+            console.log('passenger pickup', data.data);
         });
         axios.get('locations/rides/available').then(({ data }) => {
             console.log('driver available rides', data);

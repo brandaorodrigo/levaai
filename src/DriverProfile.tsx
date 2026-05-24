@@ -11,7 +11,7 @@ const DriverProfile = () => {
 
     useEffect(() => {
         setLoading(true);
-        if (!auth) {
+        if (!auth?.accessToken) {
             setLoading(false);
             return;
         }
@@ -47,7 +47,7 @@ const DriverProfile = () => {
             message.error('Celular inválido');
             return;
         }
-        if (!auth) {
+        if (!auth?.accessToken) {
             axios
                 .post('auth/register/driver', values)
                 .then(() => login(values.phone, values.password))
@@ -63,7 +63,7 @@ const DriverProfile = () => {
 
     return (
         <>
-            {!auth && (
+            {!auth?.accessToken && (
                 <Typography.Title level={2} style={{ marginBottom: 20 }}>
                     Cadastrar motorista
                 </Typography.Title>
@@ -87,7 +87,7 @@ const DriverProfile = () => {
                 >
                     <Input maxLength={15} placeholder='(00) 00000-0000' />
                 </Form.Item>
-                {!auth && (
+                {!auth?.accessToken && (
                     <>
                         <Form.Item label='Senha' name='password' rules={[{ required: true }]}>
                             <Input.Password maxLength={15} showCount />
@@ -177,7 +177,7 @@ const DriverProfile = () => {
                 </Form.Item>
                 <div style={{ height: '20px' }} />
                 <Button block htmlType='submit' loading={submitting} type='primary'>
-                    {auth ? 'Atualizar' : 'Cadastrar'}
+                    {auth?.accessToken ? 'Atualizar' : 'Cadastrar'}
                 </Button>
             </Form>
         </>

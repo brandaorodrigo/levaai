@@ -76,11 +76,32 @@ type CepData = {
     street: string;
 };
 
-export type { AuthProps, CepData, DriverProfileProps, PassengerProfileProps };
+type PickupData = {
+    id: string;
+    name: string;
+    type: string;
+    full_address: string;
+    postal_code: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+    latitude: string;
+    longitude: string;
+    active: boolean;
+    opening_hours: {
+        domingo: string;
+        segunda_a_sabado: string;
+    };
+    created_at: string;
+};
+
+export type { AuthProps, CepData, DriverProfileProps, PassengerProfileProps, PickupData };
 
 // providers ---------------------------------------------------------------------------------------
 
-const authItem = window.localStorage.getItem('auth');
+const STORAGE_KEY = 'auth';
+
+const authItem = window.localStorage.getItem(STORAGE_KEY);
 
 let auth = {} as AuthProps;
 
@@ -93,12 +114,12 @@ if (authItem) {
 const login = async (phone: string, password: string) => {
     try {
         const user = await axios.post<{ data: AuthProps }>('/auth/login', { phone, password });
-        window.localStorage.setItem('user', JSON.stringify(user.data.data));
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user.data.data));
     } catch {}
 };
 
 const logout = async () => {
-    window.localStorage.removeItem('auth');
+    window.localStorage.removeItem(STORAGE_KEY);
 };
 
 export { auth, login, logout };
@@ -243,13 +264,11 @@ export { normalizeCep, normalizeCpf, normalizePhone };
 // =================================================================================================
 
 const App: React.FC = () => {
-    const router = [
-        !auth?.accessToken
-            ? routes.login
-            : auth?.user?.role === 'driver'
-              ? routes.driver
-              : routes.passager,
-    ];
+    const router = !auth?.accessToken
+        ? routes.login
+        : auth?.user?.role === 'driver'
+          ? routes.driver
+          : routes.passager;
 
     return (
         <ConfigProvider
@@ -263,7 +282,7 @@ const App: React.FC = () => {
             theme={{ algorithm: theme.darkAlgorithm }}
         >
             <RouterProvider
-                router={createBrowserRouter(router, { basename: import.meta.env.BASE_URL })}
+                router={createBrowserRouter([router], { basename: import.meta.env.BASE_URL })}
             />
         </ConfigProvider>
     );

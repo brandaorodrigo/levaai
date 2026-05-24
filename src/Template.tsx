@@ -1,12 +1,13 @@
 import { Button, Layout } from 'antd';
 import axios from 'axios';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { auth, logout } from './App';
 import Header from './Header';
 
 const Template = () => {
     const navigate = useNavigate();
+    const lastLocationRef = useRef<{ latitude: number; longitude: number }>();
 
     useEffect(() => {
         if (!auth || auth?.user?.role !== 'driver' || !navigator.geolocation) {
@@ -14,14 +15,23 @@ const Template = () => {
         }
         const sendLocation = () => {
             navigator.geolocation.getCurrentPosition(({ coords }) => {
+                const { latitude, longitude } = coords;
+                const last = lastLocationRef.current;
+                if (
+                    String(last?.latitude) === String(latitude) &&
+                    String(last?.longitude) === String(longitude)
+                ) {
+                    return;
+                }
+                lastLocationRef.current = { latitude, longitude };
                 axios.patch('users/drivers/me/location', {
-                    latitude: coords.latitude,
-                    longitude: coords.longitude,
+                    latitude,
+                    longitude,
                 });
             });
         };
         sendLocation();
-        const intervalId = window.setInterval(sendLocation, 30000);
+        const intervalId = window.setInterval(sendLocation, 5000);
         return () => {
             window.clearInterval(intervalId);
         };
