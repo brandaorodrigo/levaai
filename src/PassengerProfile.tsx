@@ -1,4 +1,4 @@
-import { Button, Form, Input, message, Skeleton, Typography } from 'antd';
+import { Button, Form, Input, message, Select, Skeleton, Typography } from 'antd';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import {
@@ -15,6 +15,7 @@ const PassengerProfile = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [posting, setPosting] = useState(false);
+    const [neighborhoods, setNeighborhoods] = useState<any[]>([]);
 
     const onChangePostalCode = (value: string) => {
         setPosting(true);
@@ -24,7 +25,7 @@ const PassengerProfile = () => {
             .get<{ data: CepData }>('/locations/cep', { params: { cep } })
             .then(({ data }) =>
                 form.setFieldsValue({
-                    address: data.data.street,
+                    address: data.data.address,
                     neighborhood: data.data.neighborhood,
                 }),
             )
@@ -32,6 +33,14 @@ const PassengerProfile = () => {
     };
 
     useEffect(() => {
+        axios.get<any>('/locations/allowed-neighborhoods').then(({ data }) => {
+            setNeighborhoods(
+                data.data.map((each: any) => ({
+                    label: each.name,
+                    value: each.name,
+                })),
+            );
+        });
         setLoading(true);
         if (!auth?.accessToken) {
             setLoading(false);
@@ -144,7 +153,7 @@ const PassengerProfile = () => {
                     <Input disabled={posting} maxLength={100} placeholder='Endereço' showCount />
                 </Form.Item>
                 <Form.Item label='Bairro' name='neighborhood' rules={[{ required: true }]}>
-                    <Input disabled={posting} maxLength={100} placeholder='Bairro' showCount />
+                    <Select options={neighborhoods} placeholder='Bairro' />
                 </Form.Item>
                 <Form.Item label='Número' name='number' rules={[{ required: true }]}>
                     <Input maxLength={20} placeholder='Número' showCount />

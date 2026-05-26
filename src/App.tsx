@@ -74,7 +74,7 @@ type CepData = {
     full_address: string;
     neighborhood: string;
     state: string;
-    street: string;
+    address: string;
 };
 
 type PickupData = {
