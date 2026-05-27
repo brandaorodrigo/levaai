@@ -13,6 +13,7 @@ import Login from './Login';
 import PassengerHistory from './PassengerHistory';
 import PassengerHome from './PassengerHome';
 import PassengerProfile from './PassengerProfile';
+import PassengerRide from './PassengerRide';
 import Template from './Template';
 
 // types -------------------------------------------------------------------------------------------
@@ -213,8 +214,9 @@ routes.passager = {
     errorElement: <Fail />,
     element: <Template />,
     children: [
-        { path: '/perfil', element: <PassengerProfile /> },
+        { path: '/corrida', element: <PassengerRide /> },
         { path: '/historico', element: <PassengerHistory /> },
+        { path: '/perfil', element: <PassengerProfile /> },
         { path: '/*', element: <PassengerHome /> },
     ],
 };

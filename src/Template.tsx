@@ -11,9 +11,10 @@ const Template = () => {
     const lastLocationRef = useRef<{ latitude: number; longitude: number }>();
 
     useEffect(() => {
-        if (!auth?.accessToken || auth?.user?.role !== 'driver' || !navigator.geolocation) {
+        if (!auth?.accessToken || !navigator.geolocation) {
             return;
         }
+        const role = auth?.user?.role === 'passenger' ? 'customers' : 'drivers';
         const sendLocation = () => {
             navigator.geolocation.getCurrentPosition(({ coords }) => {
                 const { latitude, longitude } = coords;
@@ -25,7 +26,7 @@ const Template = () => {
                     return;
                 }
                 lastLocationRef.current = { latitude, longitude };
-                axios.patch('users/drivers/me/location', {
+                axios.patch(`users/${role}/me/location`, {
                     latitude,
                     longitude,
                 });

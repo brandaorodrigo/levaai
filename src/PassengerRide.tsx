@@ -1,30 +1,62 @@
-import { Button, Form, Input, message, Select, Typography } from 'antd';
+import { Button, Form, Input, message, Select, Skeleton } from 'antd';
 import axios from 'axios';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, normalizeCep } from './App';
+import { normalizeCep } from './App';
 
 const PassengerRide = () => {
     const navigate = useNavigate();
-
     const [form] = Form.useForm();
     const [submitting, setSubmitting] = useState(false);
+    const [pickup, setPickup] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [neighborhoods, setNeighborhoods] = useState<any[]>([]);
+    const [destinations, setDestinations] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchArray = async () => {
+            const [neighborhoods, destinations, pickup, me] = await Promise.all([
+                axios.get('/locations/allowed-neighborhoods').then(({ data }) => data.data),
+                axios.get('/locations/destinations').then(({ data }) => data.data),
+                axios.get('/locations/pickup').then(({ data }) => data.data),
+                axios.get('/auth/me').then(({ data }) => data.data),
+            ]);
+            const address = `Endereço: ${me?.address} - Número: ${me?.number} - Complemento: ${me?.complement} - Bairro: ${me?.neighborhood} - CEP: ${me?.cep}`;
+            axios.get('/locations/geocoding/foward', { params: { address } }).then(({ data }) => {
+                form.setFieldsValue({
+                    destinationLat: data.data.lat,
+                    destinationLng: data.data.lng,
+                });
+            });
+            form.setFieldsValue({
+                destinationFullAddress: address,
+                destinationPostalCode: normalizeCep(me?.postalCode),
+                destinationNeighborhood: me?.neighborhood,
+            });
+
+            setDestinations(destinations);
+            setNeighborhoods(neighborhoods);
+            setPickup(pickup);
+            setLoading(false);
+        };
+        fetchArray();
+    }, []);
 
     const onFinish = (values: any) => {
         setSubmitting(true);
         /*
         {
-        "origin_id": "123e4567-e89b-12d3-a456-426614174000",
-        "destination_full_address": "Rua das Flores, 123 - Jardim Primavera, São Paulo - SP",
-        "destination_postal_code": "01310-100",
-        "destination_neighborhood": "Jardim Primavera",
-        "destination_lat": -23.55052,
-        "destination_lng": -46.633308,
-        "purchase_size": "media",
-        "estimated_weight_kg": 15,
-        "payment_method": "dinheiro",
-        "needs_loading_help": false,
-        "customer_notes": "Cuidado com os produtos frágeis"
+        "originId": "123e4567-e89b-12d3-a456-426614174000",
+        "destinationFullAddress": "Rua das Flores, 123 - Jardim Primavera, São Paulo - SP",
+        "destinationPostalCode": "01310-100",
+        "destinationNeighborhood": "Jardim Primavera",
+        "destinationLat": -23.55052,
+        "destinationLng": -46.633308,
+        "purchaseSize": "media",
+        "estimatedWeightKg": 15,
+        "paymentMethod": "dinheiro",
+        "needsLoadingHelp": false,
+        "customerNotes": "Cuidado com os produtos frágeis"
         }
         */
         axios
@@ -41,80 +73,100 @@ const PassengerRide = () => {
 
     return (
         <>
-            <Typography.Title level={4} style={{ marginBottom: 10 }}>
-                Solicitar corrida
-            </Typography.Title>
-            <Typography.Title level={3} style={{ marginBottom: 20 }}>
-                {auth?.user?.fullName}
-            </Typography.Title>
-            <Form form={form} layout='vertical' onFinish={onFinish}>
-                <Form.Item label='Origem' name='origin_id' rules={[{ required: true }]}>
-                    <Input maxLength={100} />
+            {loading && <Skeleton active paragraph={{ rows: 20, width: '100%' }} title={false} />}
+            <Form
+                form={form}
+                layout='vertical'
+                onFinish={onFinish}
+                style={{ display: loading ? 'none' : 'block' }}
+            >
+                <Form.Item label='Origem' name='originId' rules={[{ required: true }]}>
+                    <Select
+                        maxLength={100}
+                        options={pickup.map((each) => ({ label: each.name, value: each.id }))}
+                        placeholder='Selecione onde você esta'
+                    />
                 </Form.Item>
                 <Form.Item
                     label='Destino'
-                    name='destination_full_address'
+                    name='destinationFullAddress'
                     rules={[{ required: true }]}
                 >
-                    <Input maxLength={100} />
+                    <Input maxLength={100} placeholder='Destino' />
                 </Form.Item>
                 <Form.Item
                     label='CEP'
-                    name='destination_postal_code'
+                    name='destinationPostalCode'
                     normalize={normalizeCep}
                     rules={[{ required: true }]}
                 >
-                    <Input maxLength={10} />
+                    <Input maxLength={10} placeholder='CEP' />
                 </Form.Item>
                 <Form.Item
                     label='Bairro'
-                    name='destination_neighborhood'
+                    name='destinationNeighborhood'
                     rules={[{ required: true }]}
                 >
-                    <Input maxLength={100} />
+                    <Select
+                        options={neighborhoods.map((each: any) => ({
+                            label: each.name,
+                            value: each.name,
+                        }))}
+                        placeholder='Bairro'
+                    />
                 </Form.Item>
-                <Form.Item label='Latitude' name='destination_lat' rules={[{ required: true }]}>
-                    <Input maxLength={10} />
+                <Form.Item label='Latitude' name='destinationLat' rules={[{ required: true }]}>
+                    <Input maxLength={10} placeholder='Latitude' />
                 </Form.Item>
-                <Form.Item label='Longitude' name='destination_lng' rules={[{ required: true }]}>
-                    <Input maxLength={10} />
+                <Form.Item label='Longitude' name='destinationLng' rules={[{ required: true }]}>
+                    <Input maxLength={10} placeholder='Longitude' />
                 </Form.Item>
                 <Form.Item
                     label='Tamanho da compra'
-                    name='purchase_size'
+                    name='purchaseSize'
                     rules={[{ required: true }]}
                 >
                     <Select
                         options={[
-                            { label: 'Pequena', value: 'pequena' },
-                            { label: 'Média', value: 'media' },
-                            { label: 'Grande', value: 'grande' },
+                            { label: 'Pequena', value: 'small' },
+                            { label: 'Média', value: 'medium' },
+                            { label: 'Grande', value: 'large' },
                         ]}
+                        placeholder='Tamanho da compra'
                     />
                 </Form.Item>
                 <Form.Item
                     label='Peso estimado'
-                    name='estimated_weight_kg'
+                    name='estimatedWeightKg'
                     rules={[{ required: true }]}
                 >
-                    <Input maxLength={10} />
+                    <Select
+                        defaultValue='5'
+                        options={[
+                            { label: '1 kg', value: '1' },
+                            { label: '5 kg', value: '5' },
+                            { label: '10 kg', value: '10' },
+                            { label: '15 kg', value: '15' },
+                        ]}
+                        placeholder='Peso estimado'
+                    />
                 </Form.Item>
                 <Form.Item
                     label='Método de pagamento'
-                    name='payment_method'
+                    name='needsLoadingHelp'
                     rules={[{ required: true }]}
                 >
                     <Select
                         defaultValue='pix'
                         options={[
                             { label: 'Pix', value: 'pix' },
-                            { label: 'Dinheiro', value: 'dinheiro' },
+                            { label: 'Dinheiro', value: 'cash' },
                         ]}
                     />
                 </Form.Item>
                 <Form.Item
                     label='Precisa de ajuda para carregar'
-                    name='needs_loading_help'
+                    name='needsLoadingHelp'
                     rules={[{ required: true }]}
                 >
                     <Select
@@ -125,8 +177,8 @@ const PassengerRide = () => {
                         ]}
                     />
                 </Form.Item>
-                <Form.Item label='Notas do cliente' name='customer_notes'>
-                    <Input.TextArea maxLength={100} />
+                <Form.Item label='Notas do cliente' name='customerNotes'>
+                    <Input maxLength={100} placeholder='Notas do cliente' />
                 </Form.Item>
                 <Button htmlType='submit' loading={submitting} type='primary'>
                     Solicitar

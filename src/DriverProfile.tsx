@@ -107,15 +107,15 @@ const DriverProfile = () => {
                                 },
                             ]}
                         >
-                            <Input.Password maxLength={15} showCount />
+                            <Input.Password maxLength={15} placeholder='Senha' showCount />
                         </Form.Item>
                     </>
                 )}
                 <Form.Item label='E-mail' name='email' rules={[{ required: true, type: 'email' }]}>
-                    <Input maxLength={100} showCount />
+                    <Input maxLength={100} placeholder='E-mail' showCount />
                 </Form.Item>
                 <Form.Item label='Número da CNH' name='licenseNumber' rules={[{ required: true }]}>
-                    <Input maxLength={15} showCount />
+                    <Input maxLength={15} placeholder='Número da CNH' showCount />
                 </Form.Item>
                 <Form.Item
                     label='Categoria da CNH'

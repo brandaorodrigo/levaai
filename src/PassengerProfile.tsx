@@ -33,14 +33,9 @@ const PassengerProfile = () => {
     };
 
     useEffect(() => {
-        axios.get<any>('/locations/allowed-neighborhoods').then(({ data }) => {
-            setNeighborhoods(
-                data.data.map((each: any) => ({
-                    label: each.name,
-                    value: each.name,
-                })),
-            );
-        });
+        axios
+            .get<any>('/locations/allowed-neighborhoods')
+            .then(({ data }) => setNeighborhoods(data.data));
         setLoading(true);
         if (!auth?.accessToken) {
             setLoading(false);
@@ -138,9 +133,21 @@ const PassengerProfile = () => {
                     </>
                 )}
                 <Form.Item label='E-mail' name='email' rules={[{ required: true, type: 'email' }]}>
-                    <Input maxLength={100} showCount />
+                    <Input maxLength={100} placeholder='E-mail' showCount />
                 </Form.Item>
-                <div>Se não souber seu CEP deixe em branco.</div>
+                <div
+                    style={{
+                        margin: '0 0 15px 0',
+                        fontSize: 12,
+                        color: 'gray',
+                        textAlign: 'center',
+                        backgroundColor: '#333333',
+                        padding: 6,
+                        borderRadius: 6,
+                    }}
+                >
+                    Se não souber seu CEP deixe em branco.
+                </div>
                 <Form.Item label='CEP' name='postalCode' normalize={normalizeCep}>
                     <Input
                         disabled={posting}
@@ -153,7 +160,13 @@ const PassengerProfile = () => {
                     <Input disabled={posting} maxLength={100} placeholder='Endereço' showCount />
                 </Form.Item>
                 <Form.Item label='Bairro' name='neighborhood' rules={[{ required: true }]}>
-                    <Select options={neighborhoods} placeholder='Bairro' />
+                    <Select
+                        options={neighborhoods.map((each: any) => ({
+                            label: each.name,
+                            value: each.name,
+                        }))}
+                        placeholder='Bairro'
+                    />
                 </Form.Item>
                 <Form.Item label='Número' name='number' rules={[{ required: true }]}>
                     <Input maxLength={20} placeholder='Número' showCount />
