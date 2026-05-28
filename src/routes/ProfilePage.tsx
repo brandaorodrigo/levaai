@@ -14,7 +14,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../components/Common/PageHeader";
 import { useAuth } from "../context/AuthContext";
-import { customerApi, driverApi, locationApi } from "../services/api";
+import {
+  customerApi,
+  type DriverVehicle,
+  driverApi,
+  locationApi,
+} from "../services/api";
 import { colors } from "../theme/theme";
 
 export default function ProfilePage() {
@@ -27,6 +32,7 @@ export default function ProfilePage() {
   const [cepLoading, setCepLoading] = useState(false);
   const [memberSince, setMemberSince] = useState("");
   const [rating, setRating] = useState<string | undefined>();
+  const [vehicle, setVehicle] = useState<DriverVehicle | null>(null);
 
   const isDriver = user?.role === "driver";
 
@@ -59,6 +65,13 @@ export default function ProfilePage() {
         }
         if (data.averageRating) {
           setRating(Number(data.averageRating).toFixed(1));
+        }
+        if (
+          isDriver &&
+          Array.isArray((data as any).vehicles) &&
+          (data as any).vehicles.length > 0
+        ) {
+          setVehicle((data as any).vehicles[0]);
         }
       })
       .catch(() => message.error("Erro ao carregar perfil"))
@@ -93,7 +106,9 @@ export default function ProfilePage() {
 
   const handleCepBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "");
-    if (raw.length !== 8) return;
+    if (raw.length !== 8) {
+      return;
+    }
     setCepLoading(true);
     try {
       const cep = `${raw.slice(0, 5)}-${raw.slice(5)}`;
@@ -125,7 +140,14 @@ export default function ProfilePage() {
     return (
       <div className="page-container">
         <PageHeader title="Meu perfil" />
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <Spin />
         </div>
       </div>
@@ -181,16 +203,22 @@ export default function ProfilePage() {
             </Row>
             <Row justify="center">
               <Col style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: colors.white }}>
+                <div
+                  style={{ fontSize: 14, fontWeight: 700, color: colors.white }}
+                >
                   {user?.name}
                 </div>
                 {rating && (
-                  <div style={{ fontSize: 11, color: colors.amber, marginTop: 4 }}>
+                  <div
+                    style={{ fontSize: 11, color: colors.amber, marginTop: 4 }}
+                  >
                     <StarFilled /> {rating}
                   </div>
                 )}
                 {memberSince && (
-                  <div style={{ fontSize: 10, color: colors.gray3, marginTop: 2 }}>
+                  <div
+                    style={{ fontSize: 10, color: colors.gray3, marginTop: 2 }}
+                  >
                     {memberSince}
                   </div>
                 )}
@@ -204,17 +232,110 @@ export default function ProfilePage() {
             </Form.Item>
             <Row gutter={10}>
               <Col span={12}>
-                <Form.Item label="Celular" name="phone" style={{ marginBottom: 10 }}>
+                <Form.Item
+                  label="Celular"
+                  name="phone"
+                  style={{ marginBottom: 10 }}
+                >
                   <Input disabled />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item label="E-mail" name="email" style={{ marginBottom: 0 }}>
+                <Form.Item
+                  label="E-mail"
+                  name="email"
+                  style={{ marginBottom: 0 }}
+                >
                   <Input placeholder="seu@email.com" />
                 </Form.Item>
               </Col>
             </Row>
           </Card>
+
+          {isDriver && (
+            <Card title={<SectionTitle>Veículo</SectionTitle>}>
+              {vehicle ? (
+                <>
+                  {/* <div style={{ marginBottom: 12 }}>
+                    <Tag
+                      color={
+                        vehicle.status === "ativo"
+                          ? "green"
+                          : vehicle.status === "pendente_aprovacao"
+                            ? "orange"
+                            : "red"
+                      }
+                    >
+                      {vehicle.status === "ativo"
+                        ? "Ativo"
+                        : vehicle.status === "pendente_aprovacao"
+                          ? "Aguardando aprovação"
+                          : vehicle.status}
+                    </Tag>
+                  </div> */}
+                  <Row gutter={10}>
+                    <Col span={12}>
+                      <Form.Item label="Marca" style={{ marginBottom: 10 }}>
+                        <Input disabled value={vehicle.brand} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label="Modelo" style={{ marginBottom: 10 }}>
+                        <Input disabled value={vehicle.model} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={10}>
+                    <Col span={12}>
+                      <Form.Item label="Cor" style={{ marginBottom: 10 }}>
+                        <Input disabled value={vehicle.color} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label="Ano" style={{ marginBottom: 10 }}>
+                        <Input disabled value={vehicle.manufactureYear} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={10}>
+                    <Col span={12}>
+                      <Form.Item label="Placa" style={{ marginBottom: 10 }}>
+                        <Input
+                          disabled
+                          style={{
+                            textTransform: "uppercase",
+                            fontWeight: 700,
+                          }}
+                          value={vehicle.plate}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label="Tipo" style={{ marginBottom: 10 }}>
+                        <Input disabled value={vehicle.vehicleType} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={10}>
+                    <Col span={12}>
+                      <Form.Item label="Carga (kg)" style={{ marginBottom: 0 }}>
+                        <Input disabled value={vehicle.loadCapacityKg} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label="Volume (L)" style={{ marginBottom: 0 }}>
+                        <Input disabled value={vehicle.volumeCapacityLiters} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </>
+              ) : (
+                <div style={{ fontSize: 12, color: colors.gray3 }}>
+                  Nenhum veículo cadastrado
+                </div>
+              )}
+            </Card>
+          )}
 
           {!isDriver && (
             <Card title={<SectionTitle>Endereço</SectionTitle>}>
@@ -231,17 +352,29 @@ export default function ProfilePage() {
               </Form.Item>
               <Row gutter={10}>
                 <Col span={8}>
-                  <Form.Item label="Número" name="number" style={{ marginBottom: 10 }}>
+                  <Form.Item
+                    label="Número"
+                    name="number"
+                    style={{ marginBottom: 10 }}
+                  >
                     <Input placeholder="42" />
                   </Form.Item>
                 </Col>
                 <Col span={16}>
-                  <Form.Item label="Complemento" name="complement" style={{ marginBottom: 10 }}>
+                  <Form.Item
+                    label="Complemento"
+                    name="complement"
+                    style={{ marginBottom: 10 }}
+                  >
                     <Input placeholder="Apto, bloco..." />
                   </Form.Item>
                 </Col>
               </Row>
-              <Form.Item label="Bairro" name="neighborhood" style={{ marginBottom: 0 }}>
+              <Form.Item
+                label="Bairro"
+                name="neighborhood"
+                style={{ marginBottom: 0 }}
+              >
                 <Input placeholder="Ex: Santa Cruz" />
               </Form.Item>
             </Card>

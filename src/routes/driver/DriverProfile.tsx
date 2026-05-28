@@ -1,14 +1,40 @@
 import { LogoutOutlined, StarFilled } from '@ant-design/icons';
-import { App as AntApp, Button, Card, Form, Input } from 'antd';
+import { App as AntApp, Button, Card, Form, Input, Spin, Tag } from 'antd';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/Common/PageHeader';
 import { useAuth } from '../../context/AuthContext';
+import { type DriverVehicle, driverApi } from '../../services/api';
 import { colors } from '../../theme/theme';
+
+const vehicleTypeLabel: Record<string, string> = {
+    sedan: 'Sedan',
+    suv: 'SUV',
+    hatchback: 'Hatchback',
+    pickup: 'Pickup',
+    van: 'Van',
+    truck: 'Caminhão',
+    moto: 'Moto',
+};
+
+const statusColor: Record<string, string> = {
+    ativo: 'green',
+    pendente_aprovacao: 'orange',
+    inativo: 'red',
+};
+
+const statusLabel: Record<string, string> = {
+    ativo: 'Ativo',
+    pendente_aprovacao: 'Aguardando aprovação',
+    inativo: 'Inativo',
+};
 
 export default function DriverProfile() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const { message, modal } = AntApp.useApp();
+    const [vehicle, setVehicle] = useState<DriverVehicle | null>(null);
+    const [vehicleLoading, setVehicleLoading] = useState(true);
 
     const initials =
         user?.name
@@ -16,6 +42,18 @@ export default function DriverProfile() {
             .map((p: any) => p[0])
             .slice(0, 2)
             .join('') || 'MR';
+
+    useEffect(() => {
+        driverApi
+            .me()
+            .then((profile) => {
+                if (profile.vehicles && profile.vehicles.length > 0) {
+                    setVehicle(profile.vehicles[0]);
+                }
+            })
+            .catch(() => {})
+            .finally(() => setVehicleLoading(false));
+    }, []);
 
     const handleLogout = () => {
         modal.confirm({
@@ -130,18 +168,64 @@ export default function DriverProfile() {
                         </span>
                     }
                 >
-                    <Form
-                        initialValues={{ model: 'Fiat Uno 2020', plate: 'ABC-1234' }}
-                        layout='vertical'
-                        requiredMark={false}
-                    >
-                        <Form.Item label='Modelo' name='model' style={{ marginBottom: 10 }}>
-                            <Input />
-                        </Form.Item>
-                        <Form.Item label='Placa' name='plate' style={{ marginBottom: 0 }}>
-                            <Input style={{ textTransform: 'uppercase', fontWeight: 700 }} />
-                        </Form.Item>
-                    </Form>
+                    {vehicleLoading ? (
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: 16 }}>
+                            <Spin size='small' />
+                        </div>
+                    ) : vehicle ? (
+                        <>
+                            <div style={{ marginBottom: 14 }}>
+                                <Tag color={statusColor[vehicle.status] ?? 'default'}>
+                                    {statusLabel[vehicle.status] ?? vehicle.status}
+                                </Tag>
+                            </div>
+                            <Form
+                                initialValues={{
+                                    brand: vehicle.brand,
+                                    model: vehicle.model,
+                                    color: vehicle.color,
+                                    plate: vehicle.plate,
+                                    manufactureYear: vehicle.manufactureYear,
+                                    vehicleType: vehicle.vehicleType
+                                        ? vehicleTypeLabel[vehicle.vehicleType] ?? vehicle.vehicleType
+                                        : undefined,
+                                    loadCapacityKg: vehicle.loadCapacityKg,
+                                    volumeCapacityLiters: vehicle.volumeCapacityLiters,
+                                }}
+                                layout='vertical'
+                                requiredMark={false}
+                            >
+                                <Form.Item label='Marca' name='brand' style={{ marginBottom: 10 }}>
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item label='Modelo' name='model' style={{ marginBottom: 10 }}>
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item label='Cor' name='color' style={{ marginBottom: 10 }}>
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item label='Placa' name='plate' style={{ marginBottom: 10 }}>
+                                    <Input style={{ textTransform: 'uppercase', fontWeight: 700 }} />
+                                </Form.Item>
+                                <Form.Item label='Ano' name='manufactureYear' style={{ marginBottom: 10 }}>
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item label='Tipo' name='vehicleType' style={{ marginBottom: 10 }}>
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item label='Capacidade de carga (kg)' name='loadCapacityKg' style={{ marginBottom: 10 }}>
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item label='Volume (litros)' name='volumeCapacityLiters' style={{ marginBottom: 0 }}>
+                                    <Input />
+                                </Form.Item>
+                            </Form>
+                        </>
+                    ) : (
+                        <div style={{ fontSize: 12, color: colors.gray3 }}>
+                            Nenhum veículo cadastrado
+                        </div>
+                    )}
                 </Card>
 
                 <Button

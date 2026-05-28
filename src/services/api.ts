@@ -165,6 +165,11 @@ export interface DriverVehicle {
     model: string;
     color: string;
     plate: string;
+    manufactureYear?: number;
+    vehicleType?: string;
+    loadCapacityKg?: number;
+    volumeCapacityLiters?: number;
+    registrationNumber?: string;
     status: string;
     active: boolean;
 }
@@ -210,8 +215,20 @@ export const customerApi = {
 
 // ── Driver ─────────────────────────────────────────────────────────────────────
 
+export interface DriverProfile extends CustomerProfile {
+    vehicles?: DriverVehicle[];
+    licenseNumber?: string;
+    licenseCategory?: string;
+    licenseExpiry?: string;
+    cpf?: string;
+    birthDate?: string;
+    status?: string;
+    averageRating?: string;
+    totalRides?: number;
+}
+
 export const driverApi = {
-    me: () => get<CustomerProfile>('/api/users/drivers/me'),
+    me: () => get<DriverProfile>('/api/users/drivers/me'),
 
     update: (data: Partial<Omit<CustomerProfile, 'id' | 'rating' | 'createdAt'>>) =>
         patch<CustomerProfile>('/api/users/drivers/me', data),
