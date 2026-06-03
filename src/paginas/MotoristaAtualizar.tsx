@@ -1,7 +1,8 @@
-import { App, Button, Form, Input, Spin } from 'antd';
+import { App, Button, Form, Input } from 'antd';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { telefone } from '@/App';
+import Loading from '@/Loading';
 import type { Motorista } from '@/types';
 
 const MotoristaAtualizar = () => {
@@ -28,7 +29,7 @@ const MotoristaAtualizar = () => {
     };
 
     if (carregando) {
-        return <Spin />;
+        return <Loading />;
     }
 
     return (
@@ -51,7 +52,7 @@ const MotoristaAtualizar = () => {
             <Form.Item label='Cor' name='nme_cor_veiculo' rules={[{ required: true }]}>
                 <Input />
             </Form.Item>
-            <div style={{ height: '10px' }} />
+            <div style={{ height: '25px' }} />
             <Button block htmlType='submit' loading={enviando} type='primary'>
                 Salvar
             </Button>

@@ -1,105 +1,14 @@
 * {
     box-shadow: none !important;
     outline: none !important;
-
 }
 
 .css-var-r0 {
-    --ant-color-bg-base: #111111;
-    --ant-color-border: #c16b50;
-    --ant-color-link-hover: #da4619;
-    --ant-color-link: #da4619;
-    --ant-color-primary-hover: #da4619;
-    --ant-color-primary: #da4619;
-    --ant-color-text: #aaaaaa;
-    --ant-control-height-lg: 40px;
-    --ant-control-height: 40px;
-    --ant-control-outline-width: 1px;
-    --ant-control-outline: var(--ant-color-link);
     --ant-font-family: 'Readex Pro', sans-serif;
-    --ant-font-size-heading-1: 24px;
-    --ant-font-size-heading-2: 24px;
-    --ant-font-size-heading-3: 18px;
-    --ant-font-size-heading-4: 18px;
-    --ant-font-size-heading-5: 14px;
-    --ant-layout-color-bg-body: #111111;
-    --ant-line-height-heading-1: 1;
-    --ant-line-height-heading-2: 1;
-    --ant-line-height-heading-3: 1;
-    --ant-line-height-heading-4: 1;
-    --ant-line-height-heading-5: 1;
-    --ant-padding-lg: 30px;
-
-    &.ant-btn {
-        --ant-btn-text-color-active: #da4619;
-        --ant-btn-text-color-hover: #da4619;
-    }
-
-    &.ant-layout {
-        --ant-layout-color-bg-body: #111111;
-        --ant-layout-body-bg: #111111;
-    }
-
-    &.ant-input-css-var {
-        --ant-input-active-border-color: var(--ant-color-link);
-        --ant-input-active-shadow: 0 0 0 1px var(--ant-color-link);
-        --ant-input-hover-border-color: var(--ant-color-link);
-        --ant-input-input-font-size: 14px;
-        --ant-input-padding-block: 7.5px;
-        --ant-input-padding-inline: 12px;
-        height: 40px !important;
-    }
-
-    &.ant-typography {
-        --ant-typography-title-margin-top: 5px;
-        --ant-typography-title-margin-bottom: 5px;
-    }
-
-    h4 {
-        opacity: 0.3;
-    }
-
-    h3 {
-        opacity: 0.8;
-    }
-
-    *::-webkit-scrollbar {
-        height: 8px;
-        width: 8px;
-
-        @media (max-width: 960px) {
-            width: 0px;
-        }
-    }
-
-    *::-webkit-scrollbar-thumb {
-        background: var(--ant-color-primary-hover);
-        background-clip: padding-box;
-        border-radius: 0;
-
-        &:hover {
-            background: var(--ant-color-text);
-        }
-    }
-
-    *::-webkit-scrollbar-track {
-        background: var(--ant-layout-body-bg);
-        border-radius: 0;
-    }
-
-    ::selection {
-        background: var(--ant-color-link);
-        color: #fff;
-    }
-
-    a {
-        text-decoration: none;
-        color: var(--ant-color-link) !important;
-
-        &:hover {
-            color: var(--ant-color-link-hover) !important;
-        }
-    }
+    --ant-border-radius-base: 0 !important;
+    --ant-border-radius-sm: 0 !important;
+    --ant-border-radius-md: 0 !important;
+    --ant-border-radius-lg: 0 !important;
 
     input:-webkit-autofill,
     input:-webkit-autofill:active,

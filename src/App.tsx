@@ -66,7 +66,7 @@ axios.interceptors.response.use(
     },
     (error) => {
         const status: number | undefined = error?.response?.status;
-        if (status !== 400 && getToken()) {
+        if ((status === 401 || status === 403) && getToken()) {
             limparSessao();
             window.location.href = '/';
             return Promise.reject(error);
@@ -172,7 +172,7 @@ const rotas: RouteObject = {
 
 const App: React.FC = () => (
     <ConfigProvider
-        componentSize='middle'
+        componentSize='large'
         form={{
             requiredMark: 'optional',
             scrollToFirstError: true,

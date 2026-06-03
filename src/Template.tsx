@@ -25,15 +25,11 @@ const Template = () => {
                     return;
                 }
                 ultimaRef.current = atual;
-                const url =
-                    tipo === 'cliente' ? '/api/cliente/localizacao' : '/api/motorista/localizacao';
-                axios
-                    .put(
-                        url,
-                        { vlr_latitude_atual: atual.lat, vlr_longitude_atual: atual.lon },
-                        { silenciar: true },
-                    )
-                    .catch(() => {});
+                axios.put(
+                    `/api/${tipo}/localizacao`,
+                    { vlr_latitude_atual: atual.lat, vlr_longitude_atual: atual.lon },
+                    { silenciar: true },
+                );
             });
         };
         enviar();
@@ -58,7 +54,7 @@ const Template = () => {
                 {token && (
                     <div style={{ margin: '0 auto 30px auto', textAlign: 'center' }}>
                         <Button onClick={() => navigate('/')} type='link'>
-                            Início
+                            {getTipo() === 'cliente' ? 'Solicitar corrida' : 'Corridas'}
                         </Button>
                         <Button onClick={() => navigate('/historico')} type='link'>
                             Histórico

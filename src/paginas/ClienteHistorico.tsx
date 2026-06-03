@@ -1,8 +1,9 @@
-import { Button, Card, Empty, Rate, Spin, Tag } from 'antd';
+import { Button, Card, Empty, Rate, Tag } from 'antd';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { moeda, textoSituacao, textoTamanho } from '@/App';
+import Loading from '@/Loading';
 import type { ClienteHistoricoItem } from '@/types';
 
 const LIMITE = 20;
@@ -30,7 +31,7 @@ const ClienteHistorico = () => {
     }, []);
 
     if (carregando) {
-        return <Spin />;
+        return <Loading />;
     }
 
     if (!itens.length) {

@@ -1,8 +1,9 @@
-import { App, Button, Divider, Form, Input, InputNumber, Select, Spin, Typography } from 'antd';
+import { App, Button, Divider, Form, Input, InputNumber, Select, Typography } from 'antd';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { moeda } from '@/App';
+import Loading from '@/Loading';
 import type { Bairro, Cliente, ClienteCorridaAtiva, Mercado, TamanhoCompra } from '@/types';
 
 const ClienteInicio = () => {
@@ -18,7 +19,6 @@ const ClienteInicio = () => {
     const bairroSelecionado = Form.useWatch('nme_bairro', form);
     const preco = bairros.find((b) => b.nme_bairro === bairroSelecionado)?.vlr_preco;
 
-    // Bootstrap: se já há corrida ativa, vai direto para o acompanhamento.
     useEffect(() => {
         (async () => {
             try {
@@ -36,13 +36,10 @@ const ClienteInicio = () => {
                     axios.get<Cliente>('/api/cliente'),
                 ]);
                 setMercados(listaMercados);
-                // O bairro só é escolhido depois do mercado (depende dos bairros atendidos).
                 setBairroCliente(cliente.nme_bairro);
                 form.setFieldsValue({
                     nme_rua: cliente.nme_rua,
                     nme_numero: cliente.nme_numero,
-                    nme_cidade: cliente.nme_cidade,
-                    nme_uf: cliente.nme_uf,
                 });
             } finally {
                 setCarregando(false);
@@ -51,13 +48,11 @@ const ClienteInicio = () => {
     }, []);
 
     const onMercado = async (cod_mercado: string) => {
-        // Troca de mercado redefine o bairro: a lista de bairros atendidos muda junto.
         form.setFieldValue('nme_bairro', undefined);
         setBairros([]);
         try {
             const { data: lista } = await axios.get<Bairro[]>(`/api/bairro/${cod_mercado}`);
             setBairros(lista);
-            // Pré-seleciona o bairro do cadastro do cliente, se este mercado o atender.
             if (bairroCliente && lista.some((b) => b.nme_bairro === bairroCliente)) {
                 form.setFieldValue('nme_bairro', bairroCliente);
             }
@@ -71,8 +66,6 @@ const ClienteInicio = () => {
         nme_rua: string;
         nme_numero: string;
         nme_bairro: string;
-        nme_cidade: string;
-        nme_uf: string;
         cod_tamanho_compra: TamanhoCompra;
         qtd_sacolas?: number;
         nme_comentario_inicial_cliente?: string;
@@ -81,7 +74,8 @@ const ClienteInicio = () => {
         try {
             await axios.post('/api/cliente/corrida/solicitar', {
                 ...values,
-                nme_uf: values.nme_uf.toUpperCase(),
+                nme_cidade: 'Juiz de Fora',
+                nme_uf: 'MG',
             });
             message.success('Corrida solicitada!');
             navigate('/corrida');
@@ -91,15 +85,14 @@ const ClienteInicio = () => {
     };
 
     if (carregando) {
-        return <Spin />;
+        return <Loading />;
     }
 
     return (
         <Form form={form} layout='vertical' onFinish={onFinish}>
-            <Form.Item label='Mercado' name='cod_mercado' rules={[{ required: true }]}>
+            <Form.Item label='Onde você está?' name='cod_mercado' rules={[{ required: true }]}>
                 <Select
                     onChange={onMercado}
-                    optionFilterProp='label'
                     options={mercados.map((m) => ({
                         label: `${m.nme_mercado} — ${m.nme_bairro}`,
                         value: m.cod_mercado,
@@ -109,7 +102,7 @@ const ClienteInicio = () => {
                 />
             </Form.Item>
 
-            <Divider>Entrega</Divider>
+            <Divider>Para onde iremos?</Divider>
 
             <Form.Item label='Bairro de destino' name='nme_bairro' rules={[{ required: true }]}>
                 <Select
@@ -127,17 +120,6 @@ const ClienteInicio = () => {
                 <Input />
             </Form.Item>
             <Form.Item label='Número' name='nme_numero' rules={[{ required: true }]}>
-                <Input />
-            </Form.Item>
-            <Form.Item label='Cidade' name='nme_cidade' rules={[{ required: true }]}>
-                <Input />
-            </Form.Item>
-            <Form.Item
-                label='UF'
-                name='nme_uf'
-                normalize={(v: string) => v.toUpperCase().slice(0, 2)}
-                rules={[{ required: true, len: 2 }]}
-            >
                 <Input />
             </Form.Item>
 
@@ -170,7 +152,7 @@ const ClienteInicio = () => {
                 </Typography.Title>
             )}
 
-            <div style={{ height: '10px' }} />
+            <div style={{ height: '25px' }} />
             <Button block htmlType='submit' loading={enviando} type='primary'>
                 Solicitar corrida
             </Button>

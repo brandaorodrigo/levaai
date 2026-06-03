@@ -14,8 +14,7 @@ const ClienteCadastrar = () => {
     useEffect(() => {
         axios
             .get<{ nme_bairro: string }[]>('/api/bairro')
-            .then(({ data }) => setBairros(data.map((b) => b.nme_bairro)))
-            .catch(() => {});
+            .then(({ data }) => setBairros(data.map((b) => b.nme_bairro)));
     }, []);
 
     const onFinish = async (values: Record<string, string>) => {
@@ -24,7 +23,8 @@ const ClienteCadastrar = () => {
             await axios.post('/api/cliente/cadastrar', {
                 ...values,
                 nme_telefone: numerico(values.nme_telefone),
-                nme_uf: values.nme_uf.toUpperCase(),
+                nme_cidade: 'Juiz de Fora',
+                nme_uf: 'MG',
             });
             message.success('Cadastro realizado! Faça login.');
             navigate('/');
@@ -70,17 +70,6 @@ const ClienteCadastrar = () => {
                     placeholder='Selecione seu bairro'
                     showSearch
                 />
-            </Form.Item>
-            <Form.Item label='Cidade' name='nme_cidade' rules={[{ required: true }]}>
-                <Input />
-            </Form.Item>
-            <Form.Item
-                label='UF'
-                name='nme_uf'
-                normalize={(v: string) => v.toUpperCase().slice(0, 2)}
-                rules={[{ required: true, len: 2, message: 'Use a sigla com 2 letras' }]}
-            >
-                <Input placeholder='SP' />
             </Form.Item>
             <div style={{ height: '10px' }} />
             <Button block htmlType='submit' loading={carregando} type='primary'>

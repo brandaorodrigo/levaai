@@ -1,8 +1,9 @@
-import { App, Button, Card, Descriptions, Form, Input, Modal, Rate, Result, Spin, Tag } from 'antd';
+import { App, Button, Card, Descriptions, Form, Input, Modal, Rate, Result, Tag } from 'antd';
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { moeda, textoSituacao } from '@/App';
+import Loading from '@/Loading';
 import Mapa from '@/Mapa';
 import type { ClienteCorridaAtiva, ClienteHistoricoItem, Corrida, Localizacao } from '@/types';
 
@@ -22,7 +23,6 @@ const ClienteCorrida = () => {
         ativoRef.current = true;
 
         const aoEncerrar = async () => {
-            // Corrida saiu do ar: descobre o desfecho pelo histórico (finalizada → avaliar).
             setEncerrada(true);
             try {
                 const { data: historico } = await axios.get<ClienteHistoricoItem[]>(
@@ -131,10 +131,9 @@ const ClienteCorrida = () => {
     };
 
     if (carregando) {
-        return <Spin />;
+        return <Loading />;
     }
 
-    // Corrida encerrada → avaliação ou aviso de fim.
     if (encerrada) {
         if (avaliar) {
             return (
@@ -177,7 +176,7 @@ const ClienteCorrida = () => {
     }
 
     if (!dados) {
-        return <Spin />;
+        return <Loading />;
     }
 
     const { corrida, motorista } = dados;

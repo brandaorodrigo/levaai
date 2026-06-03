@@ -1,8 +1,9 @@
-import { App, Button, Card, Empty, Form, Input, InputNumber, Modal, Spin, Switch, Tag } from 'antd';
+import { App, Button, Card, Empty, Form, Input, InputNumber, Modal, Switch, Tag } from 'antd';
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { moeda, textoTamanho } from '@/App';
+import Loading from '@/Loading';
 import type { CorridaSolicitada, Motorista, MotoristaCorridaAtiva } from '@/types';
 
 const MotoristaInicio = () => {
@@ -100,7 +101,7 @@ const MotoristaInicio = () => {
     };
 
     if (carregando) {
-        return <Spin />;
+        return <Loading />;
     }
 
     return (

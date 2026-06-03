@@ -1,8 +1,9 @@
-import { App, Button, Card, Descriptions, Form, Input, Modal, Result, Spin, Tag } from 'antd';
+import { App, Button, Card, Descriptions, Form, Input, Modal, Result, Tag } from 'antd';
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { moeda, textoSituacao, textoTamanho } from '@/App';
+import Loading from '@/Loading';
 import Mapa from '@/Mapa';
 import type { Localizacao, MotoristaCorridaAtiva } from '@/types';
 
@@ -109,7 +110,7 @@ const MotoristaCorrida = () => {
     };
 
     if (carregando) {
-        return <Spin />;
+        return <Loading />;
     }
 
     if (encerrada) {
@@ -128,7 +129,7 @@ const MotoristaCorrida = () => {
     }
 
     if (!dados) {
-        return <Spin />;
+        return <Loading />;
     }
 
     const { corrida, mercado, cliente } = dados;

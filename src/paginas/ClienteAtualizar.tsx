@@ -1,7 +1,8 @@
-import { App, Button, Form, Input, Spin } from 'antd';
+import { App, Button, Form, Input, Select } from 'antd';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { telefone } from '@/App';
+import Loading from '@/Loading';
 import type { Cliente } from '@/types';
 
 const ClienteAtualizar = () => {
@@ -9,6 +10,7 @@ const ClienteAtualizar = () => {
     const { message } = App.useApp();
     const [carregando, setCarregando] = useState(true);
     const [enviando, setEnviando] = useState(false);
+    const [bairros, setBairros] = useState<string[]>([]);
 
     useEffect(() => {
         axios
@@ -17,10 +19,16 @@ const ClienteAtualizar = () => {
             .finally(() => setCarregando(false));
     }, []);
 
+    useEffect(() => {
+        axios
+            .get<{ nme_bairro: string }[]>('/api/bairro')
+            .then(({ data }) => setBairros(data.map((b) => b.nme_bairro)));
+    }, []);
+
     const onFinish = async (values: Record<string, string>) => {
         setEnviando(true);
         try {
-            const body = { ...values, nme_uf: values.nme_uf.toUpperCase() };
+            const body = { ...values, nme_cidade: 'Juiz de Fora', nme_uf: 'MG' };
             await axios.put('/api/cliente/atualizar', body);
             message.success('Dados atualizados');
         } finally {
@@ -29,7 +37,7 @@ const ClienteAtualizar = () => {
     };
 
     if (carregando) {
-        return <Spin />;
+        return <Loading />;
     }
 
     return (
@@ -46,21 +54,19 @@ const ClienteAtualizar = () => {
             <Form.Item label='Número' name='nme_numero' rules={[{ required: true }]}>
                 <Input />
             </Form.Item>
-            <Form.Item label='Bairro' name='nme_bairro' rules={[{ required: true }]}>
-                <Input />
-            </Form.Item>
-            <Form.Item label='Cidade' name='nme_cidade' rules={[{ required: true }]}>
-                <Input />
-            </Form.Item>
             <Form.Item
-                label='UF'
-                name='nme_uf'
-                normalize={(v: string) => v.toUpperCase().slice(0, 2)}
-                rules={[{ required: true, len: 2 }]}
+                label='Bairro'
+                name='nme_bairro'
+                rules={[{ required: true }]}
+                tooltip='Só atendemos os bairros listados'
             >
-                <Input />
+                <Select
+                    options={bairros.map((b) => ({ label: b, value: b }))}
+                    placeholder='Selecione seu bairro'
+                    showSearch
+                />
             </Form.Item>
-            <div style={{ height: '10px' }} />
+            <div style={{ height: '25px' }} />
             <Button block htmlType='submit' loading={enviando} type='primary'>
                 Salvar
             </Button>
