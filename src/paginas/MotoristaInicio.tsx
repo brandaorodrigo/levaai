@@ -2,8 +2,8 @@ import { App, Button, Card, Empty, Form, Input, InputNumber, Modal, Spin, Switch
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { CorridaSolicitada, Motorista, MotoristaCorridaAtiva } from '../types';
-import { moeda, rotuloTamanho } from '../util';
+import { moeda, textoTamanho } from '@/App';
+import type { CorridaSolicitada, Motorista, MotoristaCorridaAtiva } from '@/types';
 
 const MotoristaInicio = () => {
     const navigate = useNavigate();
@@ -131,7 +131,7 @@ const MotoristaInicio = () => {
                         title={mercado.nme_mercado}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Tag color='blue'>{rotuloTamanho[corrida.cod_tamanho_compra]}</Tag>
+                            <Tag color='blue'>{textoTamanho[corrida.cod_tamanho_compra]}</Tag>
                             <strong>{moeda(corrida.vlr_corrida)}</strong>
                         </div>
                         <div style={{ margin: '6px 0', opacity: 0.8 }}>

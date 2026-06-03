@@ -2,8 +2,8 @@ import { Button, Card, Empty, Rate, Spin, Tag } from 'antd';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import type { ClienteHistoricoItem } from '../types';
-import { moeda, rotuloSituacao, rotuloTamanho } from '../util';
+import { moeda, textoSituacao, textoTamanho } from '@/App';
+import type { ClienteHistoricoItem } from '@/types';
 
 const LIMITE = 20;
 
@@ -49,12 +49,12 @@ const ClienteHistorico = () => {
                         <Tag color={corrida.cod_origem_cancelamento ? 'red' : 'green'}>
                             {corrida.cod_origem_cancelamento
                                 ? 'Cancelada'
-                                : rotuloSituacao[corrida.cod_situacao_corrida]}
+                                : textoSituacao[corrida.cod_situacao_corrida]}
                         </Tag>
                     </div>
                     <div style={{ opacity: 0.8 }}>
                         {corrida.nme_bairro_destino} · compra{' '}
-                        {rotuloTamanho[corrida.cod_tamanho_compra]}
+                        {textoTamanho[corrida.cod_tamanho_compra]}
                     </div>
                     {motorista && (
                         <div style={{ opacity: 0.6 }}>Motorista: {motorista.nme_motorista}</div>

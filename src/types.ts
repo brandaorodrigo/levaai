@@ -1,7 +1,3 @@
-// Tipos espelhando o schema do backend (levaai-poc). Os prefixos seguem a convenção
-// nme_ (texto), vlr_ (valor numérico — vem como string em campos NUMERIC), cod_ (código/uuid/enum),
-// qtd_ (quantidade), flg_ (booleano), url_ e dta_ (timestamp ISO).
-
 export type SituacaoCorrida =
     | 'cliente_solicitou'
     | 'motorista_aceitou'
@@ -95,8 +91,6 @@ export interface Localizacao {
     vlr_longitude: number;
     dta_ultimo_ping: string;
 }
-
-// Respostas compostas
 
 export interface ClienteCorridaAtiva {
     corrida: Corrida;

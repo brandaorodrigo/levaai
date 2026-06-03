@@ -1,9 +1,8 @@
 import { App, Button, Form, Input, Spin } from 'antd';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { getUsuario, salvarSessao } from '../sessao';
-import type { Motorista } from '../types';
-import { telefone } from '../util';
+import { telefone } from '@/App';
+import type { Motorista } from '@/types';
 
 const MotoristaAtualizar = () => {
     const [form] = Form.useForm();
@@ -22,13 +21,6 @@ const MotoristaAtualizar = () => {
         setEnviando(true);
         try {
             await axios.put('/api/motorista/atualizar', values);
-            const atual = getUsuario<Motorista>();
-            if (atual) {
-                salvarSessao(window.localStorage.getItem('token') as string, 'motorista', {
-                    ...atual,
-                    ...values,
-                });
-            }
             message.success('Dados atualizados');
         } finally {
             setEnviando(false);

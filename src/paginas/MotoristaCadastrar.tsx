@@ -2,7 +2,7 @@ import { App, Button, Form, Input } from 'antd';
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { somenteDigitos, telefone } from '../util';
+import { numerico, telefone } from '@/App';
 
 const MotoristaCadastrar = () => {
     const [form] = Form.useForm();
@@ -15,7 +15,7 @@ const MotoristaCadastrar = () => {
         try {
             await axios.post('/api/motorista/cadastrar', {
                 ...values,
-                nme_telefone: somenteDigitos(values.nme_telefone),
+                nme_telefone: numerico(values.nme_telefone),
             });
             message.success('Cadastro realizado! Faça login.');
             navigate('/motorista');

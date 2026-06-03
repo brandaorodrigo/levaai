@@ -2,9 +2,9 @@ import { App, Button, Card, Descriptions, Form, Input, Modal, Result, Spin, Tag 
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Mapa from '../Mapa';
-import type { Localizacao, MotoristaCorridaAtiva } from '../types';
-import { moeda, rotuloSituacao, rotuloTamanho } from '../util';
+import { moeda, textoSituacao, textoTamanho } from '@/App';
+import Mapa from '@/Mapa';
+import type { Localizacao, MotoristaCorridaAtiva } from '@/types';
 
 const MotoristaCorrida = () => {
     const navigate = useNavigate();
@@ -137,7 +137,7 @@ const MotoristaCorrida = () => {
     return (
         <>
             <Card style={{ marginBottom: '16px', textAlign: 'center' }}>
-                <Tag color='orange'>{rotuloSituacao[situacao]}</Tag>
+                <Tag color='orange'>{textoSituacao[situacao]}</Tag>
                 <div style={{ fontSize: '22px', marginTop: '8px' }}>
                     {moeda(corrida.vlr_corrida)}
                 </div>
@@ -153,7 +153,7 @@ const MotoristaCorrida = () => {
                         {corrida.nme_rua_destino} — {corrida.nme_bairro_destino}
                     </Descriptions.Item>
                     <Descriptions.Item label='Compra'>
-                        {rotuloTamanho[corrida.cod_tamanho_compra]}
+                        {textoTamanho[corrida.cod_tamanho_compra]}
                         {corrida.qtd_sacolas !== null ? ` · ${corrida.qtd_sacolas} sacolas` : ''}
                     </Descriptions.Item>
                     <Descriptions.Item label='Cliente'>{cliente.nme_cliente}</Descriptions.Item>

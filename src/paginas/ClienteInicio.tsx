@@ -2,8 +2,8 @@ import { App, Button, Divider, Form, Input, InputNumber, Select, Spin, Typograph
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Bairro, Cliente, ClienteCorridaAtiva, Mercado, TamanhoCompra } from '../types';
-import { moeda } from '../util';
+import { moeda } from '@/App';
+import type { Bairro, Cliente, ClienteCorridaAtiva, Mercado, TamanhoCompra } from '@/types';
 
 const ClienteInicio = () => {
     const [form] = Form.useForm();

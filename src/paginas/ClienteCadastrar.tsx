@@ -2,7 +2,7 @@ import { App, Button, Form, Input, Select } from 'antd';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { somenteDigitos, telefone } from '../util';
+import { numerico, telefone } from '@/App';
 
 const ClienteCadastrar = () => {
     const [form] = Form.useForm();
@@ -12,7 +12,6 @@ const ClienteCadastrar = () => {
     const { message } = App.useApp();
 
     useEffect(() => {
-        // Bairros aceitos pelo sistema (distintos). Público — usado antes do login.
         axios
             .get<{ nme_bairro: string }[]>('/api/bairro')
             .then(({ data }) => setBairros(data.map((b) => b.nme_bairro)))
@@ -24,7 +23,7 @@ const ClienteCadastrar = () => {
         try {
             await axios.post('/api/cliente/cadastrar', {
                 ...values,
-                nme_telefone: somenteDigitos(values.nme_telefone),
+                nme_telefone: numerico(values.nme_telefone),
                 nme_uf: values.nme_uf.toUpperCase(),
             });
             message.success('Cadastro realizado! Faça login.');
@@ -67,7 +66,6 @@ const ClienteCadastrar = () => {
                 tooltip='Só atendemos os bairros listados'
             >
                 <Select
-                    optionFilterProp='label'
                     options={bairros.map((b) => ({ label: b, value: b }))}
                     placeholder='Selecione seu bairro'
                     showSearch

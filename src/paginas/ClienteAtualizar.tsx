@@ -1,9 +1,8 @@
 import { App, Button, Form, Input, Spin } from 'antd';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { getUsuario, salvarSessao } from '../sessao';
-import type { Cliente } from '../types';
-import { telefone } from '../util';
+import { telefone } from '@/App';
+import type { Cliente } from '@/types';
 
 const ClienteAtualizar = () => {
     const [form] = Form.useForm();
@@ -23,13 +22,6 @@ const ClienteAtualizar = () => {
         try {
             const body = { ...values, nme_uf: values.nme_uf.toUpperCase() };
             await axios.put('/api/cliente/atualizar', body);
-            const atual = getUsuario<Cliente>();
-            if (atual) {
-                salvarSessao(window.localStorage.getItem('token') as string, 'cliente', {
-                    ...atual,
-                    ...body,
-                });
-            }
             message.success('Dados atualizados');
         } finally {
             setEnviando(false);

@@ -2,35 +2,35 @@ import { Button, Layout, Typography } from 'antd';
 import axios from 'axios';
 import { useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { getTipo, getToken, limparSessao } from './sessao';
+import { type Coordenada, distancia, getTipo, getToken, limparSessao } from './App';
+
+const MIN_METROS = 10;
 
 const Template = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const token = getToken();
     const tipo = getTipo();
-    const ultimaRef = useRef<{ lat: number; lon: number }>(undefined);
+    const ultimaRef = useRef<Coordenada>(undefined);
 
-    // Publica a própria geolocalização enquanto logado (upsert idempotente, a cada 5s).
     useEffect(() => {
         if (!token || !navigator.geolocation) {
             return;
         }
         const enviar = () => {
             navigator.geolocation.getCurrentPosition(({ coords }) => {
-                const lat = coords.latitude;
-                const lon = coords.longitude;
+                const atual: Coordenada = { lat: coords.latitude, lon: coords.longitude };
                 const ultima = ultimaRef.current;
-                if (ultima && ultima.lat === lat && ultima.lon === lon) {
+                if (ultima && distancia(ultima, atual) < MIN_METROS) {
                     return;
                 }
-                ultimaRef.current = { lat, lon };
+                ultimaRef.current = atual;
                 const url =
                     tipo === 'cliente' ? '/api/cliente/localizacao' : '/api/motorista/localizacao';
                 axios
                     .put(
                         url,
-                        { vlr_latitude_atual: lat, vlr_longitude_atual: lon },
+                        { vlr_latitude_atual: atual.lat, vlr_longitude_atual: atual.lon },
                         { silenciar: true },
                     )
                     .catch(() => {});

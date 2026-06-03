@@ -2,9 +2,7 @@ import { Button, Divider, Form, Input } from 'antd';
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { salvarSessao } from '../sessao';
-import type { Cliente } from '../types';
-import { somenteDigitos, telefone } from '../util';
+import { numerico, salvarSessao, telefone } from '@/App';
 
 const ClienteEntrar = () => {
     const [form] = Form.useForm();
@@ -14,14 +12,11 @@ const ClienteEntrar = () => {
     const onFinish = async (values: { nme_telefone: string; nme_senha: string }) => {
         setCarregando(true);
         try {
-            const { data } = await axios.post<{ token: string; cliente: Cliente }>(
-                '/api/cliente/entrar',
-                {
-                    nme_telefone: somenteDigitos(values.nme_telefone),
-                    nme_senha: values.nme_senha,
-                },
-            );
-            salvarSessao(data.token, 'cliente', data.cliente);
+            const { data } = await axios.post<{ token: string }>('/api/cliente/entrar', {
+                nme_telefone: numerico(values.nme_telefone),
+                nme_senha: values.nme_senha,
+            });
+            salvarSessao(data.token, 'cliente');
             window.location.href = '/';
         } catch {
             setCarregando(false);

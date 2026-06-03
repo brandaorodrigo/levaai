@@ -2,9 +2,9 @@ import { App, Button, Card, Descriptions, Form, Input, Modal, Rate, Result, Spin
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Mapa from '../Mapa';
-import type { ClienteCorridaAtiva, ClienteHistoricoItem, Corrida, Localizacao } from '../types';
-import { moeda, rotuloSituacao } from '../util';
+import { moeda, textoSituacao } from '@/App';
+import Mapa from '@/Mapa';
+import type { ClienteCorridaAtiva, ClienteHistoricoItem, Corrida, Localizacao } from '@/types';
 
 const ClienteCorrida = () => {
     const navigate = useNavigate();
@@ -188,7 +188,7 @@ const ClienteCorrida = () => {
     return (
         <>
             <Card style={{ marginBottom: '16px', textAlign: 'center' }}>
-                <Tag color='orange'>{rotuloSituacao[corrida.cod_situacao_corrida]}</Tag>
+                <Tag color='orange'>{textoSituacao[corrida.cod_situacao_corrida]}</Tag>
                 <div style={{ fontSize: '22px', marginTop: '8px' }}>
                     {moeda(corrida.vlr_corrida)}
                 </div>

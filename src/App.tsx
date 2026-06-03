@@ -17,12 +17,27 @@ import MotoristaCorrida from './paginas/MotoristaCorrida';
 import MotoristaEntrar from './paginas/MotoristaEntrar';
 import MotoristaHistorico from './paginas/MotoristaHistorico';
 import MotoristaInicio from './paginas/MotoristaInicio';
-import { getTipo, getToken, limparSessao } from './sessao';
 import Template from './Template';
+import type { SituacaoCorrida, TamanhoCompra, Tipo } from './types';
 
-// axios — regras base ------------------------------------------------------------------------------
+// sessão -----------------------------------------------------------------------------------------
 
-// Config extra opcional: `silenciar` evita exibir toast de erro (ex.: 404 esperado no polling).
+const getToken = (): string | null => window.localStorage.getItem('token');
+const getTipo = (): Tipo | null => window.localStorage.getItem('tipo') as Tipo | null;
+
+const salvarSessao = (token: string, tipo: Tipo): void => {
+    window.localStorage.setItem('token', token);
+    window.localStorage.setItem('tipo', tipo);
+};
+
+const limparSessao = (): void => {
+    window.localStorage.removeItem('token');
+    window.localStorage.removeItem('tipo');
+};
+
+export { getTipo, getToken, limparSessao, salvarSessao };
+
+// axios -------------------------------------------------------------------------------------------
 declare module 'axios' {
     interface AxiosRequestConfig {
         silenciar?: boolean;
@@ -40,31 +55,87 @@ axios.interceptors.request.use((config) => {
 });
 
 axios.interceptors.response.use(
-    (response) => response,
+    async (response) => {
+        if (response.status === 202) {
+            return axios(response.config);
+        }
+        if (response?.status === 200 && typeof response?.data !== 'object') {
+            response.data = {};
+        }
+        return response;
+    },
     (error) => {
         const status: number | undefined = error?.response?.status;
-        // Token expirado/ausente → encerra a sessão e volta para o login.
-        if (status === 401 && getToken()) {
+        if (status !== 400 && getToken()) {
             limparSessao();
             window.location.href = '/';
             return Promise.reject(error);
         }
         const data = error?.response?.data;
-        let texto = 'Ocorreu um erro desconhecido';
-        if (Array.isArray(data?.erros)) {
-            // express-validator: [{ msg, path, ... }]
-            texto = data.erros.map((e: { msg?: string }) => e?.msg).join('\n');
-        } else if (typeof data?.erro === 'string') {
-            texto = data.erro;
-        } else if (typeof data?.error === 'string') {
-            texto = data.error;
-        }
+        const texto = typeof data?.error === 'string' ? data.error : 'Ocorreu um erro desconhecido';
         if (!error?.config?.silenciar) {
             message.error(texto);
         }
         return Promise.reject(error);
     },
 );
+
+// util --------------------------------------------------------------------------------------------
+
+const telefone = (value: string): string => {
+    const digits = String(value || '')
+        .replace(/\D/g, '')
+        .slice(0, 11);
+    if (!digits.length) {
+        return '';
+    }
+    if (digits.length <= 2) {
+        return `(${digits}`;
+    }
+    if (digits.length <= 7) {
+        return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    }
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+const numerico = (value: string): string => String(value || '').replace(/\D/g, '');
+
+const moeda = (value: string | number | null | undefined): string => {
+    const numero = Number(value ?? 0);
+    return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+type Coordenada = { lat: number; lon: number };
+
+const distancia = (a: Coordenada, b: Coordenada): number => {
+    const R = 6371000; // raio da Terra em metros
+    const rad = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * rad;
+    const dLon = (b.lon - a.lon) * rad;
+    const s =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+};
+
+export { type Coordenada, distancia, moeda, numerico, telefone };
+
+// textos ------------------------------------------------------------------------------------------
+
+const textoTamanho: Record<TamanhoCompra, string> = {
+    pequena: 'Pequena',
+    media: 'Média',
+    grande: 'Grande',
+};
+
+const textoSituacao: Record<SituacaoCorrida, string> = {
+    cliente_solicitou: 'Procurando motorista',
+    motorista_aceitou: 'Motorista a caminho',
+    em_andamento: 'Corrida em andamento',
+    finalizada: 'Finalizada',
+};
+
+export { textoSituacao, textoTamanho };
 
 // rotas --------------------------------------------------------------------------------------------
 
