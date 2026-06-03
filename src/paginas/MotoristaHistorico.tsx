@@ -1,0 +1,71 @@
+import { Button, Card, Empty, Rate, Spin, Tag } from 'antd';
+import dayjs from 'dayjs';
+import { useEffect, useState } from 'react';
+import { motoristaHistorico } from '../api';
+import type { MotoristaHistoricoItem } from '../types';
+import { moeda, rotuloSituacao, rotuloTamanho } from '../util';
+
+const LIMITE = 20;
+
+const MotoristaHistorico = () => {
+    const [itens, setItens] = useState<MotoristaHistoricoItem[]>([]);
+    const [carregando, setCarregando] = useState(true);
+    const [fim, setFim] = useState(false);
+
+    const carregar = async (deslocamento: number) => {
+        try {
+            const lote = await motoristaHistorico(LIMITE, deslocamento);
+            setItens((atual) => (deslocamento === 0 ? lote : [...atual, ...lote]));
+            setFim(lote.length < LIMITE);
+        } finally {
+            setCarregando(false);
+        }
+    };
+
+    useEffect(() => {
+        carregar(0);
+    }, []);
+
+    if (carregando) {
+        return <Spin />;
+    }
+
+    if (!itens.length) {
+        return <Empty description='Nenhuma corrida ainda' />;
+    }
+
+    return (
+        <>
+            {itens.map(({ corrida, cliente }) => (
+                <Card key={corrida.cod_corrida} size='small' style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{dayjs(corrida.dta_criacao).format('DD/MM/YYYY HH:mm')}</span>
+                        <strong>{moeda(corrida.vlr_corrida)}</strong>
+                    </div>
+                    <div style={{ margin: '6px 0' }}>
+                        <Tag color={corrida.cod_origem_cancelamento ? 'red' : 'green'}>
+                            {corrida.cod_origem_cancelamento
+                                ? 'Cancelada'
+                                : rotuloSituacao[corrida.cod_situacao_corrida]}
+                        </Tag>
+                    </div>
+                    <div style={{ opacity: 0.8 }}>
+                        {corrida.nme_bairro_destino} · compra{' '}
+                        {rotuloTamanho[corrida.cod_tamanho_compra]}
+                    </div>
+                    <div style={{ opacity: 0.6 }}>Cliente: {cliente.nme_cliente}</div>
+                    {corrida.vlr_avaliacao_cliente !== null && (
+                        <Rate disabled value={corrida.vlr_avaliacao_cliente} />
+                    )}
+                </Card>
+            ))}
+            {!fim && (
+                <Button block onClick={() => carregar(itens.length)} type='default'>
+                    Carregar mais
+                </Button>
+            )}
+        </>
+    );
+};
+
+export default MotoristaHistorico;

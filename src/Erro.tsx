@@ -1,11 +1,16 @@
-import { Layout, Typography } from 'antd';
+import { Button, Result } from 'antd';
 
-const Erro = () => {
-    return (
-        <Layout>
-            <Typography.Title level={1}>Error</Typography.Title>
-        </Layout>
-    );
-};
+const Erro = () => (
+    <Result
+        extra={
+            <Button href='/' type='primary'>
+                Voltar ao início
+            </Button>
+        }
+        status='error'
+        subTitle='Algo deu errado nesta tela.'
+        title='Erro'
+    />
+);
 
 export default Erro;
