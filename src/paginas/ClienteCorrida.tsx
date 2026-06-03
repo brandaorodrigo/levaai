@@ -1,15 +1,9 @@
 import { App, Button, Card, Descriptions, Form, Input, Modal, Rate, Result, Spin, Tag } from 'antd';
+import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    clienteAvaliar,
-    clienteCancelar,
-    clienteCorridaAtiva,
-    clienteHistorico,
-    motoristaLocalizacao,
-} from '../api';
 import Mapa from '../Mapa';
-import type { ClienteCorridaAtiva, Corrida, Localizacao } from '../types';
+import type { ClienteCorridaAtiva, ClienteHistoricoItem, Corrida, Localizacao } from '../types';
 import { moeda, rotuloSituacao } from '../util';
 
 const ClienteCorrida = () => {
@@ -31,7 +25,10 @@ const ClienteCorrida = () => {
             // Corrida saiu do ar: descobre o desfecho pelo histórico (finalizada → avaliar).
             setEncerrada(true);
             try {
-                const historico = await clienteHistorico(1);
+                const { data: historico } = await axios.get<ClienteHistoricoItem[]>(
+                    '/api/cliente/corrida/historico',
+                    { params: { limite: 1, deslocamento: 0 } },
+                );
                 const ultima = historico[0]?.corrida;
                 if (
                     ultima &&
@@ -47,14 +44,20 @@ const ClienteCorrida = () => {
 
         const tick = async () => {
             try {
-                const resposta = await clienteCorridaAtiva();
+                const { data: resposta } = await axios.get<ClienteCorridaAtiva>(
+                    '/api/cliente/corrida/ativa',
+                    { silenciar: true },
+                );
                 if (!ativoRef.current) {
                     return;
                 }
                 setDados(resposta);
                 if (resposta.motorista) {
                     try {
-                        const lista = await motoristaLocalizacao(resposta.motorista.cod_motorista);
+                        const { data: lista } = await axios.get<Localizacao[]>(
+                            `/api/motorista/localizacao/${resposta.motorista.cod_motorista}`,
+                            { silenciar: true },
+                        );
                         if (ativoRef.current) {
                             setLocal(lista[0] ?? null);
                         }
@@ -90,7 +93,11 @@ const ClienteCorrida = () => {
             return;
         }
         setEnviando(true);
-        clienteCancelar(dados.corrida.cod_corrida, values.nme_motivo_cancelamento)
+        axios
+            .post('/api/cliente/corrida/cancelar', {
+                cod_corrida: dados.corrida.cod_corrida,
+                nme_motivo_cancelamento: values.nme_motivo_cancelamento,
+            })
             .then(() => {
                 message.success('Corrida cancelada');
                 window.location.href = '/';
@@ -110,11 +117,12 @@ const ClienteCorrida = () => {
             return;
         }
         setEnviando(true);
-        clienteAvaliar(
-            avaliar.cod_corrida,
-            values.vlr_avaliacao_cliente,
-            values.nme_comentario_final_cliente,
-        )
+        axios
+            .post('/api/cliente/corrida/avaliar', {
+                cod_corrida: avaliar.cod_corrida,
+                vlr_avaliacao_cliente: values.vlr_avaliacao_cliente,
+                nme_comentario_final_cliente: values.nme_comentario_final_cliente,
+            })
             .then(() => {
                 message.success('Obrigado pela avaliação!');
                 navigate('/');

@@ -1,13 +1,7 @@
 import { App, Button, Card, Descriptions, Form, Input, Modal, Result, Spin, Tag } from 'antd';
+import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    clienteLocalizacao,
-    motoristaCancelar,
-    motoristaCorridaAtiva,
-    motoristaFinalizar,
-    motoristaIniciar,
-} from '../api';
 import Mapa from '../Mapa';
 import type { Localizacao, MotoristaCorridaAtiva } from '../types';
 import { moeda, rotuloSituacao, rotuloTamanho } from '../util';
@@ -28,13 +22,19 @@ const MotoristaCorrida = () => {
         ativoRef.current = true;
         const tick = async () => {
             try {
-                const resposta = await motoristaCorridaAtiva();
+                const { data: resposta } = await axios.get<MotoristaCorridaAtiva>(
+                    '/api/motorista/corrida/ativa',
+                    { silenciar: true },
+                );
                 if (!ativoRef.current) {
                     return;
                 }
                 setDados(resposta);
                 try {
-                    const lista = await clienteLocalizacao(resposta.cliente.cod_cliente);
+                    const { data: lista } = await axios.get<Localizacao[]>(
+                        `/api/cliente/localizacao/${resposta.cliente.cod_cliente}`,
+                        { silenciar: true },
+                    );
                     if (ativoRef.current) {
                         setLocal(lista[0] ?? null);
                     }
@@ -68,7 +68,8 @@ const MotoristaCorrida = () => {
             return;
         }
         setEnviando(true);
-        motoristaIniciar(dados.corrida.cod_corrida)
+        axios
+            .post('/api/motorista/corrida/iniciar', { cod_corrida: dados.corrida.cod_corrida })
             .then(() => message.success('Corrida iniciada'))
             .finally(() => setEnviando(false));
     };
@@ -78,7 +79,11 @@ const MotoristaCorrida = () => {
             return;
         }
         setEnviando(true);
-        motoristaFinalizar(dados.corrida.cod_corrida, values.nme_comentario_final_motorista)
+        axios
+            .post('/api/motorista/corrida/finalizar', {
+                cod_corrida: dados.corrida.cod_corrida,
+                nme_comentario_final_motorista: values.nme_comentario_final_motorista,
+            })
             .then(() => {
                 message.success('Corrida finalizada');
                 window.location.href = '/';
@@ -91,7 +96,11 @@ const MotoristaCorrida = () => {
             return;
         }
         setEnviando(true);
-        motoristaCancelar(dados.corrida.cod_corrida, values.nme_motivo_cancelamento)
+        axios
+            .post('/api/motorista/corrida/cancelar', {
+                cod_corrida: dados.corrida.cod_corrida,
+                nme_motivo_cancelamento: values.nme_motivo_cancelamento,
+            })
             .then(() => {
                 message.success('Corrida cancelada');
                 window.location.href = '/';

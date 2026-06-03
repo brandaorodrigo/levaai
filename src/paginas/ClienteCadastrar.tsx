@@ -1,7 +1,7 @@
 import { App, Button, Form, Input, Select } from 'antd';
+import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { clienteCadastrar, listarBairrosAceitos } from '../api';
 import { somenteDigitos, telefone } from '../util';
 
 const ClienteCadastrar = () => {
@@ -12,15 +12,17 @@ const ClienteCadastrar = () => {
     const { message } = App.useApp();
 
     useEffect(() => {
-        listarBairrosAceitos()
-            .then((lista) => setBairros(lista.map((b) => b.nme_bairro)))
+        // Bairros aceitos pelo sistema (distintos). Público — usado antes do login.
+        axios
+            .get<{ nme_bairro: string }[]>('/api/bairro')
+            .then(({ data }) => setBairros(data.map((b) => b.nme_bairro)))
             .catch(() => {});
     }, []);
 
     const onFinish = async (values: Record<string, string>) => {
         setCarregando(true);
         try {
-            await clienteCadastrar({
+            await axios.post('/api/cliente/cadastrar', {
                 ...values,
                 nme_telefone: somenteDigitos(values.nme_telefone),
                 nme_uf: values.nme_uf.toUpperCase(),

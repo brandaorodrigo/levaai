@@ -1,7 +1,7 @@
 import { Button, Card, Empty, Rate, Spin, Tag } from 'antd';
+import axios from 'axios';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import { clienteHistorico } from '../api';
 import type { ClienteHistoricoItem } from '../types';
 import { moeda, rotuloSituacao, rotuloTamanho } from '../util';
 
@@ -14,7 +14,10 @@ const ClienteHistorico = () => {
 
     const carregar = async (deslocamento: number) => {
         try {
-            const lote = await clienteHistorico(LIMITE, deslocamento);
+            const { data: lote } = await axios.get<ClienteHistoricoItem[]>(
+                '/api/cliente/corrida/historico',
+                { params: { limite: LIMITE, deslocamento } },
+            );
             setItens((atual) => (deslocamento === 0 ? lote : [...atual, ...lote]));
             setFim(lote.length < LIMITE);
         } finally {

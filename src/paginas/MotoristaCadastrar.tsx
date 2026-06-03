@@ -1,7 +1,7 @@
 import { App, Button, Form, Input } from 'antd';
+import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motoristaCadastrar } from '../api';
 import { somenteDigitos, telefone } from '../util';
 
 const MotoristaCadastrar = () => {
@@ -13,7 +13,7 @@ const MotoristaCadastrar = () => {
     const onFinish = async (values: Record<string, string>) => {
         setCarregando(true);
         try {
-            await motoristaCadastrar({
+            await axios.post('/api/motorista/cadastrar', {
                 ...values,
                 nme_telefone: somenteDigitos(values.nme_telefone),
             });

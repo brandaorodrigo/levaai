@@ -1,6 +1,7 @@
 import { App, Button, Form, Input, Spin } from 'antd';
+import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { clienteAtualizar, clienteObter, getUsuario, salvarSessao } from '../api';
+import { getUsuario, salvarSessao } from '../sessao';
 import type { Cliente } from '../types';
 import { telefone } from '../util';
 
@@ -11,8 +12,9 @@ const ClienteAtualizar = () => {
     const [enviando, setEnviando] = useState(false);
 
     useEffect(() => {
-        clienteObter()
-            .then((cliente) => form.setFieldsValue(cliente))
+        axios
+            .get<Cliente>('/api/cliente')
+            .then(({ data }) => form.setFieldsValue(data))
             .finally(() => setCarregando(false));
     }, []);
 
@@ -20,7 +22,7 @@ const ClienteAtualizar = () => {
         setEnviando(true);
         try {
             const body = { ...values, nme_uf: values.nme_uf.toUpperCase() };
-            await clienteAtualizar(body);
+            await axios.put('/api/cliente/atualizar', body);
             const atual = getUsuario<Cliente>();
             if (atual) {
                 salvarSessao(window.localStorage.getItem('token') as string, 'cliente', {

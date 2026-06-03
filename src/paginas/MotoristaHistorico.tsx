@@ -1,7 +1,7 @@
 import { Button, Card, Empty, Rate, Spin, Tag } from 'antd';
+import axios from 'axios';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import { motoristaHistorico } from '../api';
 import type { MotoristaHistoricoItem } from '../types';
 import { moeda, rotuloSituacao, rotuloTamanho } from '../util';
 
@@ -14,7 +14,10 @@ const MotoristaHistorico = () => {
 
     const carregar = async (deslocamento: number) => {
         try {
-            const lote = await motoristaHistorico(LIMITE, deslocamento);
+            const { data: lote } = await axios.get<MotoristaHistoricoItem[]>(
+                '/api/motorista/corrida/historico',
+                { params: { limite: LIMITE, deslocamento } },
+            );
             setItens((atual) => (deslocamento === 0 ? lote : [...atual, ...lote]));
             setFim(lote.length < LIMITE);
         } finally {

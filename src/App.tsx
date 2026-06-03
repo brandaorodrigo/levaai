@@ -1,10 +1,9 @@
 import 'antd/dist/reset.css';
 import './App.scss';
-import './api';
-import { App as AntdApp, ConfigProvider, theme } from 'antd';
+import { App as AntdApp, ConfigProvider, message, theme } from 'antd';
 import ptBR from 'antd/es/locale/pt_BR';
+import axios from 'axios';
 import { createBrowserRouter, type RouteObject, RouterProvider } from 'react-router-dom';
-import { getTipo, getToken } from './api';
 import Erro from './Erro';
 import ClienteAtualizar from './paginas/ClienteAtualizar';
 import ClienteCadastrar from './paginas/ClienteCadastrar';
@@ -18,7 +17,54 @@ import MotoristaCorrida from './paginas/MotoristaCorrida';
 import MotoristaEntrar from './paginas/MotoristaEntrar';
 import MotoristaHistorico from './paginas/MotoristaHistorico';
 import MotoristaInicio from './paginas/MotoristaInicio';
+import { getTipo, getToken, limparSessao } from './sessao';
 import Template from './Template';
+
+// axios — regras base ------------------------------------------------------------------------------
+
+// Config extra opcional: `silenciar` evita exibir toast de erro (ex.: 404 esperado no polling).
+declare module 'axios' {
+    interface AxiosRequestConfig {
+        silenciar?: boolean;
+    }
+}
+
+axios.defaults.baseURL = import.meta.env.VITE_API;
+
+axios.interceptors.request.use((config) => {
+    const token = getToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const status: number | undefined = error?.response?.status;
+        // Token expirado/ausente → encerra a sessão e volta para o login.
+        if (status === 401 && getToken()) {
+            limparSessao();
+            window.location.href = '/';
+            return Promise.reject(error);
+        }
+        const data = error?.response?.data;
+        let texto = 'Ocorreu um erro desconhecido';
+        if (Array.isArray(data?.erros)) {
+            // express-validator: [{ msg, path, ... }]
+            texto = data.erros.map((e: { msg?: string }) => e?.msg).join('\n');
+        } else if (typeof data?.erro === 'string') {
+            texto = data.erro;
+        } else if (typeof data?.error === 'string') {
+            texto = data.error;
+        }
+        if (!error?.config?.silenciar) {
+            message.error(texto);
+        }
+        return Promise.reject(error);
+    },
+);
 
 // rotas --------------------------------------------------------------------------------------------
 

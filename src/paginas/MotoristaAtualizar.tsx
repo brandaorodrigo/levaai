@@ -1,6 +1,7 @@
 import { App, Button, Form, Input, Spin } from 'antd';
+import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { getUsuario, motoristaAtualizar, motoristaObter, salvarSessao } from '../api';
+import { getUsuario, salvarSessao } from '../sessao';
 import type { Motorista } from '../types';
 import { telefone } from '../util';
 
@@ -11,15 +12,16 @@ const MotoristaAtualizar = () => {
     const [enviando, setEnviando] = useState(false);
 
     useEffect(() => {
-        motoristaObter()
-            .then((motorista) => form.setFieldsValue(motorista))
+        axios
+            .get<Motorista>('/api/motorista')
+            .then(({ data }) => form.setFieldsValue(data))
             .finally(() => setCarregando(false));
     }, []);
 
     const onFinish = async (values: Record<string, string>) => {
         setEnviando(true);
         try {
-            await motoristaAtualizar(values);
+            await axios.put('/api/motorista/atualizar', values);
             const atual = getUsuario<Motorista>();
             if (atual) {
                 salvarSessao(window.localStorage.getItem('token') as string, 'motorista', {

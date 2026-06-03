@@ -1,13 +1,8 @@
 import { Button, Layout, Typography } from 'antd';
+import axios from 'axios';
 import { useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import {
-    clienteEnviarLocalizacao,
-    getTipo,
-    getToken,
-    limparSessao,
-    motoristaEnviarLocalizacao,
-} from './api';
+import { getTipo, getToken, limparSessao } from './sessao';
 
 const Template = () => {
     const navigate = useNavigate();
@@ -30,9 +25,15 @@ const Template = () => {
                     return;
                 }
                 ultimaRef.current = { lat, lon };
-                const enviarLocalizacao =
-                    tipo === 'cliente' ? clienteEnviarLocalizacao : motoristaEnviarLocalizacao;
-                enviarLocalizacao(lat, lon).catch(() => {});
+                const url =
+                    tipo === 'cliente' ? '/api/cliente/localizacao' : '/api/motorista/localizacao';
+                axios
+                    .put(
+                        url,
+                        { vlr_latitude_atual: lat, vlr_longitude_atual: lon },
+                        { silenciar: true },
+                    )
+                    .catch(() => {});
             });
         };
         enviar();

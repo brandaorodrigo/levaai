@@ -1,7 +1,9 @@
 import { Button, Divider, Form, Input } from 'antd';
+import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { clienteEntrar, salvarSessao } from '../api';
+import { salvarSessao } from '../sessao';
+import type { Cliente } from '../types';
 import { somenteDigitos, telefone } from '../util';
 
 const ClienteEntrar = () => {
@@ -12,11 +14,14 @@ const ClienteEntrar = () => {
     const onFinish = async (values: { nme_telefone: string; nme_senha: string }) => {
         setCarregando(true);
         try {
-            const { token, cliente } = await clienteEntrar(
-                somenteDigitos(values.nme_telefone),
-                values.nme_senha,
+            const { data } = await axios.post<{ token: string; cliente: Cliente }>(
+                '/api/cliente/entrar',
+                {
+                    nme_telefone: somenteDigitos(values.nme_telefone),
+                    nme_senha: values.nme_senha,
+                },
             );
-            salvarSessao(token, 'cliente', cliente);
+            salvarSessao(data.token, 'cliente', data.cliente);
             window.location.href = '/';
         } catch {
             setCarregando(false);

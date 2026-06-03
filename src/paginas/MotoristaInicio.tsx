@@ -1,14 +1,8 @@
 import { App, Button, Card, Empty, Form, Input, InputNumber, Modal, Spin, Switch, Tag } from 'antd';
+import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    motoristaAceitar,
-    motoristaCorridaAtiva,
-    motoristaObter,
-    motoristaSituacao,
-    motoristaSolicitadas,
-} from '../api';
-import type { CorridaSolicitada } from '../types';
+import type { CorridaSolicitada, Motorista, MotoristaCorridaAtiva } from '../types';
 import { moeda, rotuloTamanho } from '../util';
 
 const MotoristaInicio = () => {
@@ -26,14 +20,16 @@ const MotoristaInicio = () => {
     useEffect(() => {
         (async () => {
             try {
-                await motoristaCorridaAtiva();
+                await axios.get<MotoristaCorridaAtiva>('/api/motorista/corrida/ativa', {
+                    silenciar: true,
+                });
                 navigate('/corrida');
                 return;
             } catch {
                 // 404: sem corrida ativa
             }
             try {
-                const motorista = await motoristaObter();
+                const { data: motorista } = await axios.get<Motorista>('/api/motorista');
                 const estaOnline = motorista.cod_situacao_motorista === 'online';
                 setOnline(estaOnline);
                 onlineRef.current = estaOnline;
@@ -51,7 +47,9 @@ const MotoristaInicio = () => {
         }
         const tick = async () => {
             try {
-                const lista = await motoristaSolicitadas();
+                const { data: lista } = await axios.get<CorridaSolicitada[]>(
+                    '/api/motorista/corrida/solicitada',
+                );
                 if (onlineRef.current) {
                     setSolicitadas(lista);
                 }
@@ -67,7 +65,9 @@ const MotoristaInicio = () => {
     const alternarStatus = async (valor: boolean) => {
         setAlterandoStatus(true);
         try {
-            await motoristaSituacao(valor ? 'online' : 'offline');
+            await axios.put('/api/motorista/situacao', {
+                cod_situacao_motorista: valor ? 'online' : 'offline',
+            });
             setOnline(valor);
             onlineRef.current = valor;
         } finally {
@@ -83,11 +83,12 @@ const MotoristaInicio = () => {
             return;
         }
         setEnviando(true);
-        motoristaAceitar(
-            aceitar.corrida.cod_corrida,
-            values.qtd_minutos_chegada,
-            values.nme_comentario_inicial_motorista,
-        )
+        axios
+            .post('/api/motorista/corrida/aceitar', {
+                cod_corrida: aceitar.corrida.cod_corrida,
+                qtd_minutos_chegada: values.qtd_minutos_chegada,
+                nme_comentario_inicial_motorista: values.nme_comentario_inicial_motorista,
+            })
             .then(() => {
                 message.success('Corrida aceita!');
                 navigate('/corrida');

@@ -1,14 +1,8 @@
 import { App, Button, Divider, Form, Input, InputNumber, Select, Spin, Typography } from 'antd';
+import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    clienteCorridaAtiva,
-    clienteObter,
-    clienteSolicitar,
-    listarBairros,
-    listarMercados,
-} from '../api';
-import type { Bairro, Mercado, TamanhoCompra } from '../types';
+import type { Bairro, Cliente, ClienteCorridaAtiva, Mercado, TamanhoCompra } from '../types';
 import { moeda } from '../util';
 
 const ClienteInicio = () => {
@@ -28,16 +22,18 @@ const ClienteInicio = () => {
     useEffect(() => {
         (async () => {
             try {
-                await clienteCorridaAtiva();
+                await axios.get<ClienteCorridaAtiva>('/api/cliente/corrida/ativa', {
+                    silenciar: true,
+                });
                 navigate('/corrida');
                 return;
             } catch {
                 // 404 esperado: sem corrida ativa, segue para montar o pedido.
             }
             try {
-                const [listaMercados, cliente] = await Promise.all([
-                    listarMercados(),
-                    clienteObter(),
+                const [{ data: listaMercados }, { data: cliente }] = await Promise.all([
+                    axios.get<Mercado[]>('/api/mercado'),
+                    axios.get<Cliente>('/api/cliente'),
                 ]);
                 setMercados(listaMercados);
                 // O bairro só é escolhido depois do mercado (depende dos bairros atendidos).
@@ -59,7 +55,7 @@ const ClienteInicio = () => {
         form.setFieldValue('nme_bairro', undefined);
         setBairros([]);
         try {
-            const lista = await listarBairros(cod_mercado);
+            const { data: lista } = await axios.get<Bairro[]>(`/api/bairro/${cod_mercado}`);
             setBairros(lista);
             // Pré-seleciona o bairro do cadastro do cliente, se este mercado o atender.
             if (bairroCliente && lista.some((b) => b.nme_bairro === bairroCliente)) {
@@ -83,7 +79,10 @@ const ClienteInicio = () => {
     }) => {
         setEnviando(true);
         try {
-            await clienteSolicitar({ ...values, nme_uf: values.nme_uf.toUpperCase() });
+            await axios.post('/api/cliente/corrida/solicitar', {
+                ...values,
+                nme_uf: values.nme_uf.toUpperCase(),
+            });
             message.success('Corrida solicitada!');
             navigate('/corrida');
         } catch {
