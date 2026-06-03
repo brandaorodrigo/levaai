@@ -3,8 +3,8 @@ import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { moeda, textoSituacao, textoTamanho } from '@/App';
-import Loading from '@/Loading';
-import Mapa from '@/Mapa';
+import Carregando from '@/components/Carregando';
+import Mapa from '@/components/Mapa';
 import type { Localizacao, MotoristaCorridaAtiva } from '@/types';
 
 const MotoristaCorrida = () => {
@@ -110,7 +110,7 @@ const MotoristaCorrida = () => {
     };
 
     if (carregando) {
-        return <Loading />;
+        return <Carregando />;
     }
 
     if (encerrada) {
@@ -129,7 +129,7 @@ const MotoristaCorrida = () => {
     }
 
     if (!dados) {
-        return <Loading />;
+        return <Carregando />;
     }
 
     const { corrida, mercado, cliente } = dados;

@@ -1,6 +1,6 @@
 import { Button, Result } from 'antd';
 
-const Erro = () => (
+const Falha = () => (
     <Result
         extra={
             <Button href='/' type='primary'>
@@ -13,4 +13,4 @@ const Erro = () => (
     />
 );
 
-export default Erro;
+export default Falha;

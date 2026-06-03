@@ -3,20 +3,20 @@ import axios from 'axios';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { moeda, textoSituacao, textoTamanho } from '@/App';
-import Loading from '@/Loading';
-import type { MotoristaHistoricoItem } from '@/types';
+import Carregando from '@/components/Carregando';
+import type { ClienteHistoricoItem } from '@/types';
 
 const LIMITE = 20;
 
-const MotoristaHistorico = () => {
-    const [itens, setItens] = useState<MotoristaHistoricoItem[]>([]);
+const ClienteHistorico = () => {
+    const [itens, setItens] = useState<ClienteHistoricoItem[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [fim, setFim] = useState(false);
 
     const carregar = async (deslocamento: number) => {
         try {
-            const { data: lote } = await axios.get<MotoristaHistoricoItem[]>(
-                '/api/motorista/corrida/historico',
+            const { data: lote } = await axios.get<ClienteHistoricoItem[]>(
+                '/api/cliente/corrida/historico',
                 { params: { limite: LIMITE, deslocamento } },
             );
             setItens((atual) => (deslocamento === 0 ? lote : [...atual, ...lote]));
@@ -31,7 +31,7 @@ const MotoristaHistorico = () => {
     }, []);
 
     if (carregando) {
-        return <Loading />;
+        return <Carregando />;
     }
 
     if (!itens.length) {
@@ -40,7 +40,7 @@ const MotoristaHistorico = () => {
 
     return (
         <>
-            {itens.map(({ corrida, cliente }) => (
+            {itens.map(({ corrida, motorista }) => (
                 <Card key={corrida.cod_corrida} size='small' style={{ marginBottom: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span>{dayjs(corrida.dta_criacao).format('DD/MM/YYYY HH:mm')}</span>
@@ -57,7 +57,9 @@ const MotoristaHistorico = () => {
                         {corrida.nme_bairro_destino} · compra{' '}
                         {textoTamanho[corrida.cod_tamanho_compra]}
                     </div>
-                    <div style={{ opacity: 0.6 }}>Cliente: {cliente.nme_cliente}</div>
+                    {motorista && (
+                        <div style={{ opacity: 0.6 }}>Motorista: {motorista.nme_motorista}</div>
+                    )}
                     {corrida.vlr_avaliacao_cliente !== null && (
                         <Rate disabled value={corrida.vlr_avaliacao_cliente} />
                     )}
@@ -72,4 +74,4 @@ const MotoristaHistorico = () => {
     );
 };
 
-export default MotoristaHistorico;
+export default ClienteHistorico;

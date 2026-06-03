@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { moeda } from '@/App';
-import Loading from '@/Loading';
+import Carregando from '@/components/Carregando';
 import type { Bairro, Cliente, ClienteCorridaAtiva, Mercado, TamanhoCompra } from '@/types';
 
 const ClienteInicio = () => {
@@ -85,7 +85,7 @@ const ClienteInicio = () => {
     };
 
     if (carregando) {
-        return <Loading />;
+        return <Carregando />;
     }
 
     return (

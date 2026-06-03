@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { moeda, textoTamanho } from '@/App';
-import Loading from '@/Loading';
+import Carregando from '@/components/Carregando';
 import type { CorridaSolicitada, Motorista, MotoristaCorridaAtiva } from '@/types';
 
 const MotoristaInicio = () => {
@@ -101,7 +101,7 @@ const MotoristaInicio = () => {
     };
 
     if (carregando) {
-        return <Loading />;
+        return <Carregando />;
     }
 
     return (

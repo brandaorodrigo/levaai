@@ -2,7 +2,7 @@ import { Button, Divider, Form, Input } from 'antd';
 import axios from 'axios';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { numerico, salvarSessao, telefone } from '@/App';
+import { numerico, telefone } from '@/App';
 
 const MotoristaEntrar = () => {
     const [form] = Form.useForm();
@@ -16,7 +16,8 @@ const MotoristaEntrar = () => {
                 nme_telefone: numerico(values.nme_telefone),
                 nme_senha: values.nme_senha,
             });
-            salvarSessao(data.token, 'motorista');
+            window.localStorage.setItem('token', data.token);
+            window.localStorage.setItem('tipo', 'motorista');
             window.location.href = '/';
         } catch {
             setCarregando(false);

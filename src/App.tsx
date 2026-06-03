@@ -4,40 +4,31 @@ import { App as AntdApp, ConfigProvider, message, theme } from 'antd';
 import ptBR from 'antd/es/locale/pt_BR';
 import axios from 'axios';
 import { createBrowserRouter, type RouteObject, RouterProvider } from 'react-router-dom';
-import Erro from './Erro';
-import ClienteAtualizar from './paginas/ClienteAtualizar';
-import ClienteCadastrar from './paginas/ClienteCadastrar';
-import ClienteCorrida from './paginas/ClienteCorrida';
-import ClienteEntrar from './paginas/ClienteEntrar';
-import ClienteHistorico from './paginas/ClienteHistorico';
-import ClienteInicio from './paginas/ClienteInicio';
-import MotoristaAtualizar from './paginas/MotoristaAtualizar';
-import MotoristaCadastrar from './paginas/MotoristaCadastrar';
-import MotoristaCorrida from './paginas/MotoristaCorrida';
-import MotoristaEntrar from './paginas/MotoristaEntrar';
-import MotoristaHistorico from './paginas/MotoristaHistorico';
-import MotoristaInicio from './paginas/MotoristaInicio';
-import Template from './Template';
+import Falha from './components/Falha';
+import Tema from './components/Tema';
+import ClienteAtualizar from './routes/ClienteAtualizar';
+import ClienteCadastrar from './routes/ClienteCadastrar';
+import ClienteCorrida from './routes/ClienteCorrida';
+import ClienteEntrar from './routes/ClienteEntrar';
+import ClienteHistorico from './routes/ClienteHistorico';
+import ClienteInicio from './routes/ClienteInicio';
+import MotoristaAtualizar from './routes/MotoristaAtualizar';
+import MotoristaCadastrar from './routes/MotoristaCadastrar';
+import MotoristaCorrida from './routes/MotoristaCorrida';
+import MotoristaEntrar from './routes/MotoristaEntrar';
+import MotoristaHistorico from './routes/MotoristaHistorico';
+import MotoristaInicio from './routes/MotoristaInicio';
 import type { SituacaoCorrida, TamanhoCompra, Tipo } from './types';
 
 // sessão -----------------------------------------------------------------------------------------
 
-const getToken = (): string | null => window.localStorage.getItem('token');
-const getTipo = (): Tipo | null => window.localStorage.getItem('tipo') as Tipo | null;
+const token = window.localStorage.getItem('token');
+const tipo = window.localStorage.getItem('tipo') as Tipo | null;
 
-const salvarSessao = (token: string, tipo: Tipo): void => {
-    window.localStorage.setItem('token', token);
-    window.localStorage.setItem('tipo', tipo);
-};
-
-const limparSessao = (): void => {
-    window.localStorage.removeItem('token');
-    window.localStorage.removeItem('tipo');
-};
-
-export { getTipo, getToken, limparSessao, salvarSessao };
+export { tipo, token };
 
 // axios -------------------------------------------------------------------------------------------
+
 declare module 'axios' {
     interface AxiosRequestConfig {
         silenciar?: boolean;
@@ -47,7 +38,6 @@ declare module 'axios' {
 axios.defaults.baseURL = import.meta.env.VITE_API;
 
 axios.interceptors.request.use((config) => {
-    const token = getToken();
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -66,8 +56,8 @@ axios.interceptors.response.use(
     },
     (error) => {
         const status: number | undefined = error?.response?.status;
-        if ((status === 401 || status === 403) && getToken()) {
-            limparSessao();
+        if ((status === 401 || status === 403) && token) {
+            window.localStorage.clear();
             window.location.href = '/';
             return Promise.reject(error);
         }
@@ -160,12 +150,12 @@ const motorista: RouteObject[] = [
     { path: '/*', element: <MotoristaInicio /> },
 ];
 
-const autenticado = getTipo() === 'cliente' ? cliente : motorista;
+const autenticado = tipo === 'cliente' ? cliente : motorista;
 
 const rotas: RouteObject = {
-    errorElement: <Erro />,
-    element: <Template />,
-    children: getToken() ? autenticado : publico,
+    errorElement: <Falha />,
+    element: <Tema />,
+    children: token ? autenticado : publico,
 };
 
 // =================================================================================================

@@ -2,15 +2,13 @@ import { Button, Layout, Typography } from 'antd';
 import axios from 'axios';
 import { useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { type Coordenada, distancia, getTipo, getToken, limparSessao } from './App';
+import { type Coordenada, distancia, tipo, token } from '@/App';
 
 const MIN_METROS = 10;
 
-const Template = () => {
+const Tema = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const token = getToken();
-    const tipo = getTipo();
     const ultimaRef = useRef<Coordenada>(undefined);
 
     useEffect(() => {
@@ -38,7 +36,7 @@ const Template = () => {
     }, [token, tipo]);
 
     const sair = () => {
-        limparSessao();
+        window.localStorage.clear();
         window.location.href = '/';
     };
 
@@ -54,7 +52,7 @@ const Template = () => {
                 {token && (
                     <div style={{ margin: '0 auto 30px auto', textAlign: 'center' }}>
                         <Button onClick={() => navigate('/')} type='link'>
-                            {getTipo() === 'cliente' ? 'Solicitar corrida' : 'Corridas'}
+                            {tipo === 'cliente' ? 'Solicitar corrida' : 'Corridas'}
                         </Button>
                         <Button onClick={() => navigate('/historico')} type='link'>
                             Histórico
@@ -79,4 +77,4 @@ const Template = () => {
     );
 };
 
-export default Template;
+export default Tema;

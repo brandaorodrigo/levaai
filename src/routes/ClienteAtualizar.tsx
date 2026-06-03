@@ -2,7 +2,7 @@ import { App, Button, Form, Input, Select } from 'antd';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { telefone } from '@/App';
-import Loading from '@/Loading';
+import Carregando from '@/components/Carregando';
 import type { Cliente } from '@/types';
 
 const ClienteAtualizar = () => {
@@ -37,7 +37,7 @@ const ClienteAtualizar = () => {
     };
 
     if (carregando) {
-        return <Loading />;
+        return <Carregando />;
     }
 
     return (
