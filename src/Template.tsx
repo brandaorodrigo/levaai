@@ -2,8 +2,6 @@ import { Button, Layout } from 'antd';
 import axios from 'axios';
 import { useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { auth, logout } from './App';
-import Header from './Header';
 
 const Template = () => {
     const navigate = useNavigate();
@@ -11,7 +9,7 @@ const Template = () => {
     const lastLocationRef = useRef<{ latitude: number; longitude: number }>();
 
     useEffect(() => {
-        if (!auth?.accessToken || !navigator.geolocation) {
+        if (!token || !navigator.geolocation) {
             return;
         }
         const role = auth?.user?.role === 'passenger' ? 'customers' : 'drivers';
@@ -37,7 +35,7 @@ const Template = () => {
         return () => {
             window.clearInterval(intervalId);
         };
-    }, [auth]);
+    }, [token, tipo]);
 
     return (
         <Layout
@@ -48,7 +46,6 @@ const Template = () => {
         >
             <Layout style={{ minHeight: '100vh', width: '320px', margin: '0 auto' }}>
                 <Layout.Content style={{ padding: '20px', textAlign: 'left' }}>
-                    <Header />
                     <Outlet />
                 </Layout.Content>
                 {auth?.accessToken && (
@@ -57,7 +54,7 @@ const Template = () => {
                             Início
                         </Button>
                         <Button onClick={() => navigate('/perfil')} type='link'>
-                            Perfil
+                            Atualizar
                         </Button>
                         <Button
                             onClick={() => logout().then(() => (window.location.href = '/'))}

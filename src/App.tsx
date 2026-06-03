@@ -3,136 +3,25 @@ import './App.scss';
 import { ConfigProvider, message, theme } from 'antd';
 import ptBR from 'antd/es/locale/pt_BR';
 import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
-import type { Dayjs } from 'dayjs';
 import { createBrowserRouter, type RouteObject, RouterProvider } from 'react-router-dom';
-import DriverHistory from './DriverHistory';
-import DriverHome from './DriverHome';
-import DriverProfile from './DriverProfile';
-import Fail from './Fail';
-import Login from './Login';
-import PassengerHistory from './PassengerHistory';
-import PassengerHome from './PassengerHome';
-import PassengerProfile from './PassengerProfile';
-import PassengerRide from './PassengerRide';
+import ClienteEntrar from './ClienteEntrar';
+import Erro from './Erro';
 import Template from './Template';
 
-// types -------------------------------------------------------------------------------------------
+// tokens -------------------------------------------------------------------------------------------
 
-type AuthProps = {
-    accessToken: string;
-    refreshToken: string;
-    user: {
-        fullName: string;
-        id: string;
-        phone: string;
-        role: 'passenger' | 'driver';
-    };
-};
+const token = window.localStorage.getItem('token');
+const tipo = window.localStorage.getItem('tipo');
 
-type PassengerProfileProps = {
-    address: string;
-    complement: string;
-    confirmPassword?: string;
-    email: string;
-    fullName: string;
-    id: string;
-    neighborhood: string;
-    number: string;
-    password: string;
-    phone: string;
-    postalCode: string;
-};
+export type { tipo, token };
 
-type DriverProfileProps = {
-    averageRating: number;
-    birthDate: string | Dayjs;
-    cpf: string;
-    email: string;
-    fullName: string;
-    id: string;
-    licenseCategory: string;
-    licenseExpiry: string | Dayjs;
-    licenseNumber: string;
-    memberSince: string;
-    password: string;
-    phone: string;
-    totalRides: number;
-    vehicles: {
-        brand: string;
-        color: string;
-        id: string;
-        loadCapacityKg: number;
-        manufactureYear: number;
-        model: string;
-        plate: string;
-        vehicleType: string;
-    }[];
-};
-
-type CepData = {
-    cep: string;
-    city: string;
-    full_address: string;
-    neighborhood: string;
-    state: string;
-    address: string;
-};
-
-type PickupData = {
-    id: string;
-    name: string;
-    type: string;
-    full_address: string;
-    postal_code: string;
-    neighborhood: string;
-    city: string;
-    state: string;
-    latitude: string;
-    longitude: string;
-    active: boolean;
-    opening_hours: {
-        domingo: string;
-        segunda_a_sabado: string;
-    };
-    created_at: string;
-};
-
-export type { AuthProps, CepData, DriverProfileProps, PassengerProfileProps, PickupData };
-
-// providers ---------------------------------------------------------------------------------------
-
-const STORAGE_KEY = 'auth';
-
-const authItem = window.localStorage.getItem(STORAGE_KEY);
-
-let auth = {} as AuthProps;
-
-if (authItem) {
-    try {
-        auth = JSON.parse(authItem);
-    } catch {}
-}
-
-const login = async (phone: string, password: string) => {
-    try {
-        const user = await axios.post<{ data: AuthProps }>('/auth/login', { phone, password });
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user.data.data));
-    } catch {}
-};
-
-const logout = async () => {
-    window.localStorage.removeItem(STORAGE_KEY);
-};
-
-export { auth, login, logout };
-
-// services ----------------------------------------------------------------------------------------
+// axios -------------------------------------------------------------------------------------------
 
 axios.defaults.baseURL = import.meta.env.VITE_API;
 
 axios.interceptors.request.use(async (config) => {
-    if (auth?.accessToken) {
-        config.headers.Authorization = `Bearer ${auth?.accessToken}`;
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
     }
     // cache
     if (config?.params?.cache || config?.url?.includes('cache=true')) {
@@ -182,48 +71,9 @@ axios.interceptors.response.use(
     },
 );
 
-// routes ------------------------------------------------------------------------------------------
+// utilitario --------------------------------------------------------------------------------------
 
-const routes = {
-    login: {} as RouteObject,
-    driver: {} as RouteObject,
-    passager: {} as RouteObject,
-};
-
-routes.login = {
-    errorElement: <Fail />,
-    element: <Template />,
-    children: [
-        { path: '/cadastrar/motorista', element: <DriverProfile /> },
-        { path: '/cadastrar/passageiro', element: <PassengerProfile /> },
-        { path: '/*', element: <Login /> },
-    ],
-};
-
-routes.driver = {
-    errorElement: <Fail />,
-    element: <Template />,
-    children: [
-        { path: '/perfil', element: <DriverProfile /> },
-        { path: '/historico', element: <DriverHistory /> },
-        { path: '/*', element: <DriverHome /> },
-    ],
-};
-
-routes.passager = {
-    errorElement: <Fail />,
-    element: <Template />,
-    children: [
-        { path: '/corrida', element: <PassengerRide /> },
-        { path: '/historico', element: <PassengerHistory /> },
-        { path: '/perfil', element: <PassengerProfile /> },
-        { path: '/*', element: <PassengerHome /> },
-    ],
-};
-
-// utils -------------------------------------------------------------------------------------------
-
-const mask = (value: string | number, mask: string): string => {
+const mascara = (value: string | number, mask: string): string => {
     if (!value) {
         return '';
     }
@@ -247,7 +97,7 @@ const mask = (value: string | number, mask: string): string => {
     return output;
 };
 
-const normalizePhone = (value: string) => {
+const telefone = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 11);
     if (!digits.length) {
         return '';
@@ -261,37 +111,54 @@ const normalizePhone = (value: string) => {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
-const normalizeCpf = (value: string): string => mask(value, '___.___.___-__');
+export { mascara, telefone };
 
-const normalizeCep = (value: string): string => mask(value, '_____-___');
+// rotas -------------------------------------------------------------------------------------------
 
-export { normalizeCep, normalizeCpf, normalizePhone };
+const publico = [
+    { path: '/cadastrar', element: <ClienteCadastrar /> },
+    { path: '/*', element: <ClienteEntrar /> },
+    { path: '/motorista/cadastrar', element: <MotoristaCadastrar /> },
+    { path: '/motorista/*', element: <MotoristaEntrar /> },
+] as RouteObject[];
+
+const cliente = [
+    { path: '/atualizar', element: <ClienteAtualizar /> },
+    { path: '/historico', element: <ClienteHistorico /> },
+    { path: '/corrida', element: <ClienteCorrida /> },
+    { path: '/*', element: <ClienteInicio /> },
+] as RouteObject[];
+
+const motorista = [
+    { path: '/motorista/atualizar', element: <MotoristaAtualizar /> },
+    { path: '/motorista/historico', element: <MotoristaHistorico /> },
+    { path: '/motorista/corrida', element: <MotoristaCorrida /> },
+    { path: '/motorista/*', element: <MotoristaInicio /> },
+] as RouteObject[];
+
+const rotas = {
+    errorElement: <Erro />,
+    element: <Template />,
+    children: token ? (tipo === 'cliente' ? cliente : motorista) : publico,
+};
 
 // =================================================================================================
 
-const App: React.FC = () => {
-    const router = !auth?.accessToken
-        ? routes.login
-        : auth?.user?.role === 'driver'
-          ? routes.driver
-          : routes.passager;
-
-    return (
-        <ConfigProvider
-            componentSize='middle'
-            form={{
-                requiredMark: 'optional',
-                scrollToFirstError: true,
-                validateMessages: { required: '$' + '{label} obrigatório' },
-            }}
-            locale={ptBR}
-            theme={{ algorithm: theme.darkAlgorithm }}
-        >
-            <RouterProvider
-                router={createBrowserRouter([router], { basename: import.meta.env.BASE_URL })}
-            />
-        </ConfigProvider>
-    );
-};
+const App: React.FC = () => (
+    <ConfigProvider
+        componentSize='middle'
+        form={{
+            requiredMark: 'optional',
+            scrollToFirstError: true,
+            validateMessages: { required: '$' + '{label} obrigatório' },
+        }}
+        locale={ptBR}
+        theme={{ algorithm: theme.darkAlgorithm }}
+    >
+        <RouterProvider
+            router={createBrowserRouter([rotas], { basename: import.meta.env.BASE_URL })}
+        />
+    </ConfigProvider>
+);
 
 export default App;

@@ -1,9 +1,9 @@
 import { Button, Divider, Form, Input, message } from 'antd';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login, normalizePhone } from './App';
+import { telefone } from './App';
 
-const Login = () => {
+const ClienteEntrar = () => {
     const [form] = Form.useForm();
     const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
@@ -25,13 +25,13 @@ const Login = () => {
             <Form form={form} layout='vertical' onFinish={onFinish}>
                 <Form.Item
                     label='Celular'
-                    name='phone'
-                    normalize={normalizePhone}
+                    name='nme_telefone'
+                    normalize={telefone}
                     rules={[{ required: true }]}
                 >
                     <Input />
                 </Form.Item>
-                <Form.Item label='Senha' name='password' rules={[{ required: true }]}>
+                <Form.Item label='Senha' name='nme_senha' rules={[{ required: true }]}>
                     <Input.Password />
                 </Form.Item>
                 <div style={{ height: '10px' }} />
@@ -40,19 +40,14 @@ const Login = () => {
                 </Button>
             </Form>
             <Divider>Ou</Divider>
-            <Button
-                block
-                htmlType='button'
-                onClick={() => navigate('/cadastrar/passageiro')}
-                type='default'
-            >
+            <Button block htmlType='button' onClick={() => navigate('/cadastrar')} type='default'>
                 Cadastrar
             </Button>
             <div style={{ height: '30px' }} />
             <Button
                 block
                 htmlType='button'
-                onClick={() => navigate('/cadastrar/motorista')}
+                onClick={() => navigate('/motorista/cadastrar')}
                 type='link'
             >
                 Cadastrar como motorista
@@ -61,4 +56,4 @@ const Login = () => {
     );
 };
 
-export default Login;
+export default ClienteEntrar;
